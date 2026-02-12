@@ -1,0 +1,99 @@
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+
+local FOLDER = "Don"
+local FILE = FOLDER.."/"..plr.Name..".txt"
+
+if not isfolder(FOLDER) then
+	makefolder(FOLDER)
+end
+
+local function Save(text)
+	writefile(FILE,text)
+end
+
+local function Load()
+	return isfile(FILE) and readfile(FILE) or ""
+end
+
+local function MaskName(name)
+	local half = math.floor(#name/2)
+	return "***"..string.sub(name,half+1)
+end
+
+local gui = Instance.new("ScreenGui",game.CoreGui)
+gui.Name = "DonUI"
+
+local Toggle = Instance.new("ImageButton",gui)
+Toggle.Size = UDim2.fromOffset(60,60)
+Toggle.Position = UDim2.new(0,25,0.4,0)
+Toggle.Image = "rbxassetid://97883661045358"
+Toggle.BackgroundTransparency = 1
+Toggle.Active = true
+Toggle.Draggable = true
+Instance.new("UICorner",Toggle).CornerRadius = UDim.new(1,0)
+
+local Main = Instance.new("Frame",gui)
+Main.Size = UDim2.new(0.5,0,0,130)
+Main.Position = UDim2.new(0.25,0,0,0)
+Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Main.Active = true
+Main.Draggable = true
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,12)
+
+local Stroke = Instance.new("UIStroke",Main)
+Stroke.Color = Color3.fromRGB(255,255,255)
+Stroke.Thickness = 2
+
+local Box = Instance.new("TextBox",Main)
+Box.Size = UDim2.new(1,-20,0.5,-10)
+Box.Position = UDim2.new(0,10,0,10)
+Box.BackgroundTransparency = 1
+Box.TextColor3 = Color3.fromRGB(255,255,255)
+Box.Font = Enum.Font.GothamBold
+Box.TextScaled = true
+Box.ClearTextOnFocus = false
+Box.Text = "Đơn: "..Load()
+
+Box:GetPropertyChangedSignal("Text"):Connect(function()
+	if not Box.Text:match("^Đơn:%s") then
+		local v = Box.Text:gsub("Đơn:%s?","")
+		Box.Text = "Đơn: "..v
+	end
+end)
+
+Box.FocusLost:Connect(function()
+	local v = Box.Text:gsub("Đơn:%s?","")
+	Save(v)
+end)
+
+local NameLabel = Instance.new("TextLabel",Main)
+NameLabel.Size = UDim2.new(1,-20,0.5,-10)
+NameLabel.Position = UDim2.new(0,10,0.5,0)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Text = "Tên: "..MaskName(plr.Name)
+NameLabel.Font = Enum.Font.GothamBold
+NameLabel.TextScaled = true
+NameLabel.TextColor3 = Color3.fromRGB(255,255,0)
+
+local Close = Instance.new("TextButton",Main)
+Close.Size = UDim2.fromOffset(30,30)
+Close.Position = UDim2.new(1,-35,0,5)
+Close.Text = "X"
+Close.BackgroundTransparency = 1
+Close.TextColor3 = Color3.fromRGB(255,0,0)
+Close.Font = Enum.Font.GothamBold
+Close.TextScaled = true
+
+Close.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+local opened = true
+
+Toggle.MouseButton1Click:Connect(function()
+	opened = not opened
+	Main.Visible = opened
+end)
