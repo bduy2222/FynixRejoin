@@ -4419,7 +4419,7 @@ spawn(function()
             -- BUY DRGON CLAW
             --------------------------------------------------
             local FishmanKarate = typeof(GetBP) == "function" and GetBP("Fishman Karate")
-            
+            local DragonClaw = typeof(GetBP) == "function" and GetBP("Dragon Claw")
 
             if plr:FindFirstChild("WeaponAssetCache")
             and FishmanKarate
@@ -4617,7 +4617,7 @@ spawn(function()
 
             if plr:FindFirstChild("WeaponAssetCache")
             and ElectricClaw
-            and ElectricClawFindFirstChild("Level")
+            and ElectricClaw:FindFirstChild("Level")
             and ElectricClaw.Level.Value >= 400
             and not _G.BoughtDragonTalon then
             
@@ -4725,7 +4725,11 @@ spawn(function()
             -- Elite 
             --------------------------------------------------
             
-            if enemies and enemies:FindFirstChild("Deandre") or enemies:FindFirstChild("Urban") or enemies:FindFirstChild("Diablo")then
+            if enemies and (
+                enemies:FindFirstChild("Deandre")
+                or enemies:FindFirstChild("Urban")
+                or enemies:FindFirstChild("Diablo")
+            ) then
                 _G.Level = false
                 _G.FarmEliteHunt = true
             else
