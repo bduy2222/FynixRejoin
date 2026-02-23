@@ -19,7 +19,7 @@ if not writefile or not makefolder or not isfolder then
 end
 
 local folderName = "CheckOnlineFynix"
-local fileName   = folderName .. "\" .. plr.Name .. "_online.txt"
+local fileName   = folderName .. "/" .. plr.Name .. "_online.txt"
 
 if not isfolder(folderName) then
     makefolder(folderName)
