@@ -38,6 +38,7 @@ echo "[4/7] Installing system dependencies..."
 yes | pkg install -y \
 python \
 python-pip \
+python-psutil \
 clang \
 make \
 libffi \
@@ -58,8 +59,6 @@ rust
 # ==============================
 echo "[5/7] Upgrading pip..."
 
-pip uninstall -y psutil >/dev/null 2>&1
-
 pip install --upgrade pip setuptools wheel
 
 # ==============================
@@ -79,10 +78,6 @@ pillow \
 discord.py \
 python-socketio \
 prettytable
-
-# Install psutil with fallback fix
-pip install --only-binary=:all: psutil || \
-CFLAGS="-Wno-error=implicit-function-declaration" pip install psutil
 
 # ==============================
 # DOWNLOAD TOOL
