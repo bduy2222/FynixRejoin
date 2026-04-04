@@ -13,13 +13,10 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
 -- PATH
-local folderPath = "Workspace/CheckOnlineFynix"
+local folderPath = "CheckOnlineFynix"
 local filePath = folderPath .. "/" .. LocalPlayer.Name .. "_online.txt"
 
 -- ENSURE FOLDER
-if not isfolder("Workspace") then
-	makefolder("Workspace")
-end
 
 if not isfolder(folderPath) then
 	makefolder(folderPath)
