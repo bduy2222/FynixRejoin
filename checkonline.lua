@@ -3,7 +3,7 @@
 --====================================================
 
 -- CONFIG
-getgenv().delay = getgenv().delay or 9 -- 8â€“10 seconds
+getgenv().delay = getgenv().delay or 9 -- 8-10 seconds
 
 -- SERVICES
 local Players = game:GetService("Players")
@@ -12,27 +12,18 @@ local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- PATH
+-- PATH (🔥 FIX HERE)
 local folderPath = "CheckOnlineFynix"
 local filePath = folderPath .. "/" .. LocalPlayer.Name .. "_online.txt"
 
--- ENSURE FOLDER
-
+-- ENSURE FOLDER (🔥 FIX HERE)
 if not isfolder(folderPath) then
 	makefolder(folderPath)
 end
 
 -- SAFE WRITE (TIMESTAMP)
-local lastWrite = 0
 local function writeState()
 	local now = os.time()
-
-	-- ðŸ”¥ trÃ¡nh spam write
-	if now == lastWrite then
-		return
-	end
-
-	lastWrite = now
 
 	pcall(function()
 		writefile(filePath, tostring(now))
@@ -54,7 +45,7 @@ local function setOnline()
 	if shuttingDown then return end
 	if onlineActive then return end
 	onlineActive = true
-	writeState()
+	writeState() -- 🔥 vẫn giữ lần đầu
 end
 
 local function setOffline()
@@ -62,7 +53,6 @@ local function setOffline()
 	shuttingDown = true
 	onlineActive = false
 
-	-- ðŸ”¥ ghi timestamp cÅ© Ä‘á»ƒ Python detect cháº¿t ngay
 	pcall(function()
 		writefile(filePath, "0")
 	end)
@@ -84,13 +74,13 @@ task.spawn(function()
 end)
 
 --====================================================
--- HEARTBEAT (LIGHTWEIGHT)
+-- HEARTBEAT (🔥 ALWAYS WRITE)
 --====================================================
 
 task.spawn(function()
 	while task.wait(getgenv().delay) do
 		if onlineActive and not shuttingDown then
-			writeState()
+			writeState() -- 🔥 luôn write mỗi delay
 		end
 	end
 end)
@@ -99,19 +89,16 @@ end)
 -- OFFLINE TRIGGERS (CLIENT SAFE)
 --====================================================
 
--- Character removed (strong crash indicator)
 LocalPlayer.CharacterRemoving:Connect(function()
 	setOffline()
 end)
 
--- PlayerRemoving
 Players.PlayerRemoving:Connect(function(plr)
 	if plr == LocalPlayer then
 		setOffline()
 	end
 end)
 
--- Teleport (client-safe)
 pcall(function()
 	LocalPlayer.OnTeleport:Connect(function(state)
 		if state == Enum.TeleportState.Started then
@@ -120,7 +107,6 @@ pcall(function()
 	end)
 end)
 
--- ErrorPrompt detect
 pcall(function()
 	local CoreGui = game:GetService("CoreGui")
 	CoreGui.ChildAdded:Connect(function(child)
@@ -130,14 +116,12 @@ pcall(function()
 	end)
 end)
 
--- Disconnect message detect
 pcall(function()
 	GuiService.ErrorMessageChanged:Connect(function()
 		setOffline()
 	end)
 end)
 
--- RenderStepped disconnect fallback (connection lost)
 local lastHeartbeat = tick()
 RunService.Heartbeat:Connect(function()
 	lastHeartbeat = tick()
