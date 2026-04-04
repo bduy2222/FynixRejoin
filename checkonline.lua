@@ -1,108 +1,159 @@
-repeat task.wait() until game.Players.LocalPlayer
-task.wait(1)
+--====================================================
+--  FYNIX ONLINE CHECK SYSTEM (CLIENT SAFE VERSION)
+--====================================================
 
 -- CONFIG
-getgenv().delay = getgenv().delay or 3   -- ↓ giảm delay xuống 3s
-local Delay = getgenv().delay
+getgenv().delay = getgenv().delay or 9 -- 8â€“10 seconds
 
-local Players         = game:GetService("Players")
+-- SERVICES
+local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
-local VirtualUser     = game:GetService("VirtualUser")
-local CoreGui         = game:GetService("CoreGui")
-local StarterGui      = game:GetService("StarterGui")
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
 
-local plr = Players.LocalPlayer
+-- PATH
+local folderPath = "Workspace/CheckOnlineFynix"
+local filePath = folderPath .. "/" .. LocalPlayer.Name .. "_online.txt"
 
-if not writefile or not makefolder or not isfolder then
-    warn("Executor không hỗ trợ file system")
-    return
+-- ENSURE FOLDER
+if not isfolder("Workspace") then
+	makefolder("Workspace")
 end
 
-local folderName = "CheckOnlineFynix"
-local fileName   = folderName .. "/" .. plr.Name .. "_online.txt"
-
-if not isfolder(folderName) then
-    makefolder(folderName)
+if not isfolder(folderPath) then
+	makefolder(folderPath)
 end
 
-----------------------------------------------------------
--- NOTIFICATION
-----------------------------------------------------------
-local function Notify(title, text)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = 5
-        })
-    end)
+-- SAFE WRITE (TIMESTAMP)
+local lastWrite = 0
+local function writeState()
+	local now = os.time()
+
+	-- ðŸ”¥ trÃ¡nh spam write
+	if now == lastWrite then
+		return
+	end
+
+	lastWrite = now
+
+	pcall(function()
+		writefile(filePath, tostring(now))
+	end)
 end
 
-Notify("CheckOnlineFynix", "Script đã chạy | Delay: "..Delay.."s")
+-- ENSURE FILE EXISTS
+pcall(function()
+	if not isfile(filePath) then
+		writefile(filePath, "0")
+	end
+end)
 
-----------------------------------------------------------
--- FILE FUNCTIONS
-----------------------------------------------------------
-local function writeOnline()
-    writefile(fileName, "1")
+-- STATE CONTROL
+local onlineActive = false
+local shuttingDown = false
+
+local function setOnline()
+	if shuttingDown then return end
+	if onlineActive then return end
+	onlineActive = true
+	writeState()
 end
 
-local function writeOffline()
-    writefile(fileName, "2")
+local function setOffline()
+	if shuttingDown then return end
+	shuttingDown = true
+	onlineActive = false
+
+	-- ðŸ”¥ ghi timestamp cÅ© Ä‘á»ƒ Python detect cháº¿t ngay
+	pcall(function()
+		writefile(filePath, "0")
+	end)
 end
 
-writeOnline()
+--====================================================
+-- LOAD COMPLETE
+--====================================================
 
--- update online định kỳ theo delay
 task.spawn(function()
-    while task.wait(Delay) do
-        writeOnline()
-    end
+	if not game:IsLoaded() then
+		game.Loaded:Wait()
+	end
+
+	if LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() then
+		task.wait(2)
+		setOnline()
+	end
 end)
 
-----------------------------------------------------------
--- OFFLINE EVENTS (SAFE MODE)
-----------------------------------------------------------
+--====================================================
+-- HEARTBEAT (LIGHTWEIGHT)
+--====================================================
 
--- chỉ ghi offline khi PlayerRemoving thật sự
-Players.PlayerRemoving:Connect(function(p)
-    if p == plr then
-        writeOffline()
-    end
+task.spawn(function()
+	while task.wait(getgenv().delay) do
+		if onlineActive and not shuttingDown then
+			writeState()
+		end
+	end
 end)
 
--- CHỈ ghi offline nếu teleport FAIL
-plr.OnTeleport:Connect(function(state)
-    if state == Enum.TeleportState.Failed then
-        task.wait(2)
-        writeOffline()
-    end
+--====================================================
+-- OFFLINE TRIGGERS (CLIENT SAFE)
+--====================================================
+
+-- Character removed (strong crash indicator)
+LocalPlayer.CharacterRemoving:Connect(function()
+	setOffline()
 end)
 
-----------------------------------------------------------
--- ANTI AFK
-----------------------------------------------------------
-plr.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(), workspace.CurrentCamera.CFrame)
-    task.wait(0.1)
-    VirtualUser:Button2Up(Vector2.new(), workspace.CurrentCamera.CFrame)
+-- PlayerRemoving
+Players.PlayerRemoving:Connect(function(plr)
+	if plr == LocalPlayer then
+		setOffline()
+	end
 end)
 
-----------------------------------------------------------
--- AUTO REJOIN (CONFIRM BEFORE OFFLINE)
-----------------------------------------------------------
-local PromptOverlay =
-    CoreGui:WaitForChild("RobloxPromptGui")
-    :WaitForChild("promptOverlay")
-
-PromptOverlay.ChildAdded:Connect(function(child)
-    if child.Name == "ErrorPrompt" then
-        task.spawn(function()
-            task.wait(3) -- confirm thật sự mất kết nối
-            writeOffline()
-            Notify("CheckOnlineFynix", "Mất kết nối - Đang Rejoin...")
-            task.wait(1)
-            TeleportService:Teleport(game.PlaceId, plr)
-        end)
-    end
+-- Teleport (client-safe)
+pcall(function()
+	LocalPlayer.OnTeleport:Connect(function(state)
+		if state == Enum.TeleportState.Started then
+			setOffline()
+		end
+	end)
 end)
+
+-- ErrorPrompt detect
+pcall(function()
+	local CoreGui = game:GetService("CoreGui")
+	CoreGui.ChildAdded:Connect(function(child)
+		if child.Name == "ErrorPrompt" then
+			setOffline()
+		end
+	end)
+end)
+
+-- Disconnect message detect
+pcall(function()
+	GuiService.ErrorMessageChanged:Connect(function()
+		setOffline()
+	end)
+end)
+
+-- RenderStepped disconnect fallback (connection lost)
+local lastHeartbeat = tick()
+RunService.Heartbeat:Connect(function()
+	lastHeartbeat = tick()
+end)
+
+task.spawn(function()
+	while task.wait(5) do
+		if tick() - lastHeartbeat > 15 then
+			setOffline()
+		end
+	end
+end)
+
+--====================================================
+-- END
+--====================================================
