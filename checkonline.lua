@@ -10,30 +10,40 @@ local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
--- PATH (🔥 FIX HERE)
+-- SIMPLE NOTIFY
+local function notify(title, text, time)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {
+			Title = title,
+			Text = text,
+			Duration = time or 3
+		})
+	end)
+end
+
+-- PATH ( FIX HERE)
 local folderPath = "CheckOnlineFynix"
 local filePath = folderPath .. "/" .. LocalPlayer.Name .. "_online.txt"
 
--- ENSURE FOLDER (🔥 FIX HERE)
+-- ENSURE FOLDER ( FIX HERE)
 if not isfolder(folderPath) then
 	makefolder(folderPath)
 end
 
--- SAFE WRITE (TIMESTAMP)
+-- SAFE WRITE (ONLINE = 1)
 local function writeState()
-	local now = os.time()
-
 	pcall(function()
-		writefile(filePath, tostring(now))
+		writefile(filePath, "1")
 	end)
 end
 
 -- ENSURE FILE EXISTS
 pcall(function()
 	if not isfile(filePath) then
-		writefile(filePath, "0")
+		writefile(filePath, "2")
 	end
 end)
 
@@ -45,7 +55,9 @@ local function setOnline()
 	if shuttingDown then return end
 	if onlineActive then return end
 	onlineActive = true
-	writeState() -- 🔥 vẫn giữ lần đầu
+	writeState()
+
+	notify("Fynix", "Status: ONLINE", 3)
 end
 
 local function setOffline()
@@ -54,8 +66,10 @@ local function setOffline()
 	onlineActive = false
 
 	pcall(function()
-		writefile(filePath, "0")
+		writefile(filePath, "2")
 	end)
+
+	notify("Fynix", "Status: OFFLINE", 3)
 end
 
 --====================================================
@@ -63,6 +77,8 @@ end
 --====================================================
 
 task.spawn(function()
+	notify("Fynix", "Script Loaded", 3)
+
 	if not game:IsLoaded() then
 		game.Loaded:Wait()
 	end
@@ -74,13 +90,13 @@ task.spawn(function()
 end)
 
 --====================================================
--- HEARTBEAT (🔥 ALWAYS WRITE)
+-- HEARTBEAT ( ALWAYS WRITE)
 --====================================================
 
 task.spawn(function()
 	while task.wait(getgenv().delay) do
 		if onlineActive and not shuttingDown then
-			writeState() -- 🔥 luôn write mỗi delay
+			writeState()
 		end
 	end
 end)
