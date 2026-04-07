@@ -11,40 +11,54 @@ local TeleportService = game:GetService("TeleportService")
 local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
+local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
 -- SIMPLE NOTIFY
 local function notify(title, text, time)
-	pcall(function()
-		StarterGui:SetCore("SendNotification", {
-			Title = title,
-			Text = text,
-			Duration = time or 3
-		})
-	end)
+pcall(function()
+StarterGui:SetCore("SendNotification", {
+Title = title,
+Text = text,
+Duration = time or 3
+})
+end)
 end
 
--- PATH ( FIX HERE)
+-- PATH (🔥 FIX USERID)
 local folderPath = "CheckOnlineFynix"
-local filePath = folderPath .. "/" .. LocalPlayer.Name .. "_online.txt"
-
--- ENSURE FOLDER ( FIX HERE)
+local filePath = folderPath .. "/" .. tostring(LocalPlayer.UserId) .. "_" .. string.sub(game.JobId,1,6) .. "_online.txt"
+-- ENSURE FOLDER
 if not isfolder(folderPath) then
-	makefolder(folderPath)
+makefolder(folderPath)
 end
 
--- SAFE WRITE (ONLINE = 1)
-local function writeState()
-	pcall(function()
-		writefile(filePath, "1")
-	end)
+-- BUILD JSON
+local function buildData(status)
+return {
+placeId = game.PlaceId,
+date = os.date("%Y-%m-%d %H:%M:%S"),
+timestamp = os.time(),
+status = status,
+jobId = game.JobId
+}
+end
+
+-- SAFE WRITE (JSON)
+local function writeState(status)
+pcall(function()
+local data = buildData(status or "Online")
+local encoded = HttpService:JSONEncode(data)
+writefile(filePath, encoded)
+end)
 end
 
 -- ENSURE FILE EXISTS
 pcall(function()
-	if not isfile(filePath) then
-		writefile(filePath, "2")
-	end
+if not isfile(filePath) then
+task.wait(1)
+writeState("Offline")
+end
 end)
 
 -- STATE CONTROL
@@ -52,24 +66,24 @@ local onlineActive = false
 local shuttingDown = false
 
 local function setOnline()
-	if shuttingDown then return end
-	if onlineActive then return end
-	onlineActive = true
-	writeState()
+if shuttingDown then return end
+if onlineActive then return end
+onlineActive = true
+writeState("Online")
 
-	notify("Fynix", "Status: ONLINE", 3)
+notify("Fynix", "Status: ONLINE", 3)
+
 end
 
 local function setOffline()
-	if shuttingDown then return end
-	shuttingDown = true
-	onlineActive = false
+if shuttingDown then return end
+shuttingDown = true
+onlineActive = false
 
-	pcall(function()
-		writefile(filePath, "2")
-	end)
+writeState("Offline")
 
-	notify("Fynix", "Status: OFFLINE", 3)
+notify("Fynix", "Status: OFFLINE", 3)
+
 end
 
 --====================================================
@@ -77,78 +91,88 @@ end
 --====================================================
 
 task.spawn(function()
-	notify("Fynix", "Script Loaded", 3)
+notify("Fynix", "Script Loaded", 3)
 
-	if not game:IsLoaded() then
-		game.Loaded:Wait()
-	end
+if not game:IsLoaded() then  
+	game.Loaded:Wait()  
+end  
 
-	if LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() then
-		task.wait(2)
-		setOnline()
-	end
+if LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() then  
+	task.wait(2)  
+	setOnline()  
+end
+
 end)
 
 --====================================================
--- HEARTBEAT ( ALWAYS WRITE)
+-- HEARTBEAT (ALWAYS WRITE)
 --====================================================
 
 task.spawn(function()
-	while task.wait(getgenv().delay) do
-		if onlineActive and not shuttingDown then
-			writeState()
-		end
-	end
+while true do
+task.wait(getgenv().delay)
+
+if onlineActive and not shuttingDown then  
+		local ok, err = pcall(function()  
+			writeState("Online")  
+		end)  
+
+		if not ok then  
+			warn("[FYNIX] writeState failed:", err)  
+		end  
+	end  
+end
+
 end)
 
 --====================================================
--- OFFLINE TRIGGERS (CLIENT SAFE)
+-- OFFLINE TRIGGERS
 --====================================================
 
 LocalPlayer.CharacterRemoving:Connect(function()
-	setOffline()
+setOffline()
 end)
 
 Players.PlayerRemoving:Connect(function(plr)
-	if plr == LocalPlayer then
-		setOffline()
-	end
+if plr == LocalPlayer then
+setOffline()
+end
 end)
 
 pcall(function()
-	LocalPlayer.OnTeleport:Connect(function(state)
-		if state == Enum.TeleportState.Started then
-			setOffline()
-		end
-	end)
+LocalPlayer.OnTeleport:Connect(function(state)
+if state == Enum.TeleportState.Started then
+setOffline()
+end
+end)
 end)
 
 pcall(function()
-	local CoreGui = game:GetService("CoreGui")
-	CoreGui.ChildAdded:Connect(function(child)
-		if child.Name == "ErrorPrompt" then
-			setOffline()
-		end
-	end)
+local CoreGui = game:GetService("CoreGui")
+CoreGui.ChildAdded:Connect(function(child)
+if child.Name == "ErrorPrompt" then
+setOffline()
+end
+end)
 end)
 
 pcall(function()
-	GuiService.ErrorMessageChanged:Connect(function()
-		setOffline()
-	end)
+GuiService.ErrorMessageChanged:Connect(function()
+setOffline()
+end)
 end)
 
 local lastHeartbeat = tick()
 RunService.Heartbeat:Connect(function()
-	lastHeartbeat = tick()
+lastHeartbeat = tick()
 end)
 
 task.spawn(function()
-	while task.wait(5) do
-		if tick() - lastHeartbeat > 15 then
-			setOffline()
-		end
-	end
+while task.wait(5) do
+if tick() - lastHeartbeat > 15 then
+setOffline()
+end
+end
 end)
 
 --====================================================
