@@ -25,12 +25,13 @@ Duration = time or 3
 end)
 end
 
--- PATH (🔥 FIX USERID)
+-- PATH ( FIX USERID ONLY)
 local folderPath = "CheckOnlineFynix"
-local filePath = folderPath .. "/" .. tostring(LocalPlayer.UserId) .. "_" .. string.sub(game.JobId,1,6) .. "_online.txt"
+local filePath = folderPath .. "/" .. tostring(LocalPlayer.UserId) .. "_online.txt"
+
 -- ENSURE FOLDER
 if not isfolder(folderPath) then
-makefolder(folderPath)
+    makefolder(folderPath)
 end
 
 -- BUILD JSON
