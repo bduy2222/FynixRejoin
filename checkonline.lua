@@ -127,53 +127,109 @@ end
 end)
 
 --====================================================
--- OFFLINE TRIGGERS
+-- SMART OFFLINE / REJOIN SYSTEM
 --====================================================
 
-LocalPlayer.CharacterRemoving:Connect(function()
-setOffline()
-end)
-
-Players.PlayerRemoving:Connect(function(plr)
-if plr == LocalPlayer then
-setOffline()
-end
-end)
-
-pcall(function()
-LocalPlayer.OnTeleport:Connect(function(state)
-if state == Enum.TeleportState.Started then
-setOffline()
-end
-end)
-end)
-
-pcall(function()
-local CoreGui = game:GetService("CoreGui")
-CoreGui.ChildAdded:Connect(function(child)
-if child.Name == "ErrorPrompt" then
-setOffline()
-end
-end)
-end)
-
-pcall(function()
-GuiService.ErrorMessageChanged:Connect(function()
-setOffline()
-end)
-end)
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
+local LocalPlayer = Players.LocalPlayer
 
 local lastHeartbeat = tick()
+local isRejoining = false
+
+-- ===== SAFE REJOIN =====
+local function safeRejoin(reason)
+    if isRejoining then return end
+    isRejoining = true
+
+    warn("[FYNIX] Rejoining due to:", reason)
+
+    task.wait(1)
+
+    pcall(function()
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+    end)
+end
+
+--====================================================
+-- CHARACTER REMOVED (CHỈ REJOIN KHI KHÔNG PHẢI RESET)
+--====================================================
+LocalPlayer.CharacterRemoving:Connect(function()
+    task.wait(1)
+
+    if not LocalPlayer.Character then
+        safeRejoin("Character lost")
+    end
+end)
+
+--====================================================
+-- PLAYER REMOVING (DISCONNECT)
+--====================================================
+Players.PlayerRemoving:Connect(function(plr)
+    if plr == LocalPlayer then
+        safeRejoin("PlayerRemoving")
+    end
+end)
+
+--====================================================
+-- TELEPORT START (IGNORE)
+--====================================================
+pcall(function()
+    LocalPlayer.OnTeleport:Connect(function(state)
+        if state == Enum.TeleportState.Failed then
+            safeRejoin("Teleport failed")
+        end
+    end)
+end)
+
+--====================================================
+-- ERROR PROMPT (CHỈ CHECK TEXT)
+--====================================================
+pcall(function()
+    local CoreGui = game:GetService("CoreGui")
+
+    CoreGui.ChildAdded:Connect(function(child)
+        if child.Name == "ErrorPrompt" then
+
+            local text = ""
+
+            pcall(function()
+                text = child:FindFirstChildWhichIsA("TextLabel").Text
+            end)
+
+            if text ~= "" then
+                safeRejoin("ErrorPrompt: " .. text)
+            end
+        end
+    end)
+end)
+
+--====================================================
+-- ERROR MESSAGE (FILTER)
+--====================================================
+pcall(function()
+    GuiService.ErrorMessageChanged:Connect(function(msg)
+        if msg and msg ~= "" then
+            safeRejoin("ErrorMessage: " .. msg)
+        end
+    end)
+end)
+
+--====================================================
+-- HEARTBEAT CHECK (ANTI FREEZE)
+--====================================================
 RunService.Heartbeat:Connect(function()
-lastHeartbeat = tick()
+    lastHeartbeat = tick()
 end)
 
 task.spawn(function()
-while task.wait(5) do
-if tick() - lastHeartbeat > 15 then
-setOffline()
-end
-end
+    while task.wait(5) do
+        if tick() - lastHeartbeat > 20 then
+            safeRejoin("Heartbeat freeze")
+        end
+    end
 end)
 
 --====================================================
