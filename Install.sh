@@ -1,103 +1,85 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
+# ==============================
+# CONFIG
+# ==============================
+LOG_FILE="$HOME/fynix_install.log"
+exec > "$LOG_FILE" 2>&1
+
 clear
-echo "======================================"
-echo "        FYNIX REJOIN INSTALLER        "
-echo "======================================"
-sleep 1
+echo "Fynix Installer..."
 
 # ==============================
-# UPDATE TERMUX
+# ERROR HANDLER
 # ==============================
-echo "[1/7] Updating packages..."
-yes | pkg update -y
-yes | pkg upgrade -y
+error_exit() {
+    echo ""
+    echo "[ERROR] Installation failed!"
+    echo "Check log: $LOG_FILE"
+    exit 1
+}
 
 # ==============================
-# STORAGE PERMISSION
+# CHANGE REPO
 # ==============================
-echo "[2/7] Setting up storage..."
-echo "y" | termux-setup-storage
+termux-change-repo <<EOF >/dev/null 2>&1
+1
+EOF || error_exit
 
 # ==============================
-# ENABLE WAKELOCK
+# UPDATE
 # ==============================
-echo "[3/7] Enabling wakelock..."
-if command -v termux-wake-lock >/dev/null 2>&1; then
-    termux-wake-lock
-    echo "Wakelock enabled."
-else
-    echo "termux-wake-lock not available."
-fi
+pkg update -y >/dev/null 2>&1 || error_exit
+pkg upgrade -y >/dev/null 2>&1 || error_exit
 
 # ==============================
-# INSTALL SYSTEM PACKAGES
+# STORAGE
 # ==============================
-echo "[4/7] Installing system dependencies..."
-
-yes | pkg install -y \
-python \
-python-pip \
-python-psutil \
-clang \
-make \
-libffi \
-openssl \
-libjpeg-turbo \
-libpng \
-zlib \
-freetype \
-git \
-cmake \
-build-essential \
-tsu \
-libexpat \
-rust
+termux-setup-storage >/dev/null 2>&1
+sleep 2
 
 # ==============================
-# FIX PIP
+# WAKELOCK
 # ==============================
-echo "[5/7] Upgrading pip..."
-
-pip install --upgrade pip setuptools wheel
+command -v termux-wake-lock >/dev/null 2>&1 && termux-wake-lock
 
 # ==============================
-# INSTALL PYTHON LIBRARIES
+# INSTALL CORE
 # ==============================
-echo "[6/7] Installing Python libraries..."
+pkg install -y python clang make libffi openssl \
+libjpeg-turbo libpng zlib freetype git cmake \
+libexpat rust tsu >/dev/null 2>&1 || error_exit
 
+# ==============================
+# PIP FIX
+# ==============================
+python -m pip install --upgrade pip setuptools wheel >/dev/null 2>&1 || error_exit
+
+# ==============================
+# PYTHON LIBS
+# ==============================
 pip install --prefer-binary \
-requests \
-pytz \
-pyjwt \
-pycryptodome \
-rich \
-colorama \
-flask \
-pillow \
-discord.py \
-python-socketio \
-prettytable
+requests pytz pyjwt pycryptodome rich colorama flask \
+pillow discord.py python-socketio prettytable psutil \
+>/dev/null 2>&1 || error_exit
 
 # ==============================
 # DOWNLOAD TOOL
 # ==============================
-echo "[7/7] Downloading Fynix Rejoin Tool..."
+cd ~/storage/downloads || error_exit
 
-cd /sdcard/Download || exit
-
-curl -L -o obf-bduyrjpremium.py \
-https://raw.githubusercontent.com/bduy2222/FynixRejoin/refs/heads/main/obf-bduyrjpremium.py
-
-echo ""
-echo "======================================"
-echo "      INSTALLATION COMPLETED          "
-echo "======================================"
-sleep 2
+curl -L -o fynix.py \
+https://raw.githubusercontent.com/bduy2222/FynixRejoin/refs/heads/main/obf-bduyrjpremium.py \
+>/dev/null 2>&1 || error_exit
 
 # ==============================
-# RUN TOOL
+# DONE
 # ==============================
-echo "Starting Fynix Rejoin..."
+echo "[OK] Installed successfully"
 
-su -c "export PATH=\$PATH:/data/data/com.termux/files/usr/bin && export TERM=xterm-256color && cd /sdcard/Download && python obf-bduyrjpremium.py"
+# ==============================
+# RUN TOOL (AUTO ROOT)
+# ==============================
+export TERM=xterm-256color
+
+tsu -c "cd ~/storage/downloads && python obf-bduyrjpremium.py"
