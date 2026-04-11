@@ -1,73 +1,148 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
+# ==============================
+# INIT
+# ==============================
+set -e
+
 LOG_FILE="$HOME/fynix_install.log"
-exec > "$LOG_FILE" 2>&1
+exec > >(tee -a "$LOG_FILE") 2>&1
 
 clear
-echo "Fynix Installer..."
+echo "=== FYNIX INSTALLER ==="
+echo ""
 
+# ==============================
+# ERROR HANDLER
+# ==============================
 error_exit() {
     echo ""
     echo "[ERROR] Installation failed!"
     echo "Check log: $LOG_FILE"
     exit 1
 }
+
 # ==============================
-# REPO SETUP (PRO)
+# FIX CRLF (🔥 cực quan trọng)
+# ==============================
+sed -i 's/\r$//' "$0" 2>/dev/null || true
+
+# ==============================
+# CHECK INTERNET
+# ==============================
+echo "[*] Checking internet..."
+ping -c 1 google.com >/dev/null 2>&1 || error_exit
+
+# ==============================
+# REPO SETUP (SMART)
 # ==============================
 setup_repo() {
     echo "[*] Setting up repositories..."
 
-    # ===== BACKUP =====
-    cp $PREFIX/etc/apt/sources.list $PREFIX/etc/apt/sources.list.bak 2>/dev/null
+    mirrors=(
+        "https://packages-cf.termux.dev/apt/termux-main"
+        "https://packages.termux.dev/apt/termux-main"
+    )
 
-    # ===== MAIN REPO (ỔN ĐỊNH NHẤT) =====
-    echo "deb https://packages-cf.termux.dev/apt/termux-main stable main" > $PREFIX/etc/apt/sources.list
+    cp $PREFIX/etc/apt/sources.list $PREFIX/etc/apt/sources.list.bak 2>/dev/null || true
 
-    # ===== X11 (OPTIONAL) =====
-    mkdir -p $PREFIX/etc/apt/sources.list.d
-    echo "deb https://packages-cf.termux.dev/apt/termux-x11 x11 main" > $PREFIX/etc/apt/sources.list.d/x11.list
+    for m in "${mirrors[@]}"; do
+        echo "Trying: $m"
 
-    # ===== UPDATE =====
-    pkg update -y >/dev/null 2>&1 || return 1
+        echo "deb $m stable main" > $PREFIX/etc/apt/sources.list
 
-    echo "[OK] Repo configured"
-    return 0
+        if pkg update -y >/dev/null 2>&1; then
+            echo "[OK] Using $m"
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 setup_repo || error_exit
 
-pkg update -y >/dev/null 2>&1 || error_exit
-pkg upgrade -y >/dev/null 2>&1 || error_exit
+# ==============================
+# UPDATE SYSTEM
+# ==============================
+echo "[*] Updating system..."
+pkg update -y || error_exit
+pkg upgrade -y || error_exit
 
-termux-setup-storage >/dev/null 2>&1
+# ==============================
+# STORAGE
+# ==============================
+echo "[*] Setting up storage..."
+termux-setup-storage >/dev/null 2>&1 || true
 sleep 2
 
+# ==============================
+# WAKE LOCK
+# ==============================
 command -v termux-wake-lock >/dev/null 2>&1 && termux-wake-lock
 
-pkg install -y python clang make libffi openssl \
-libjpeg-turbo libpng zlib freetype git cmake \
-libexpat rust tsu >/dev/null 2>&1 || error_exit
+# ==============================
+# INSTALL CORE
+# ==============================
+echo "[*] Installing core packages..."
 
-python -m pip install --upgrade pip setuptools wheel >/dev/null 2>&1 || error_exit
+pkg install -y \
+python clang make libffi openssl \
+libjpeg-turbo libpng zlib freetype git cmake \
+libexpat rust tsu curl ncurses dos2unix \
+|| error_exit
+
+# ==============================
+# FIX PIP
+# ==============================
+echo "[*] Updating pip..."
+python -m pip install --upgrade pip setuptools wheel || error_exit
+
+# ==============================
+# INSTALL PYTHON LIBS
+# ==============================
+echo "[*] Installing python libraries..."
 
 python -m pip install --prefer-binary \
 requests pytz pyjwt pycryptodome rich colorama flask \
 pillow discord.py python-socketio prettytable psutil \
->/dev/null 2>&1 || error_exit
+|| error_exit
+
+# ==============================
+# DOWNLOAD TOOL (RETRY)
+# ==============================
+echo "[*] Downloading tool..."
 
 cd ~/storage/downloads 2>/dev/null || cd ~ || error_exit
 
-curl -L -o fynix.py \
-https://raw.githubusercontent.com/bduy2222/FynixRejoin/refs/heads/main/obf-bduyrjpremium.py \
->/dev/null 2>&1 || error_exit
+URL="https://raw.githubusercontent.com/bduy2222/FynixRejoin/refs/heads/main/obf-bduyrjpremium.py"
 
+for i in {1..3}; do
+    if curl -L -o obf-bduyrjpremium.py "$URL"; then
+        break
+    fi
+    echo "[RETRY] Download failed... ($i)"
+    sleep 2
+done
+
+[ -f obf-bduyrjpremium.py ] || error_exit
+
+# ==============================
+# DONE
+# ==============================
+echo ""
 echo "[OK] Installed successfully"
+echo ""
 
+# ==============================
+# RUN TOOL
+# ==============================
 export TERM=xterm-256color
+
+echo "[*] Starting tool..."
 
 if command -v tsu >/dev/null 2>&1; then
     tsu -c "cd ~/storage/downloads && python obf-bduyrjpremium.py"
 else
-    python fynix.py
+    python obf-bduyrjpremium.py
 fi
