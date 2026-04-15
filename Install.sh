@@ -4,13 +4,13 @@
 printf "deb https://packages.termux.dev/apt/termux-main stable main\n" > $PREFIX/etc/apt/sources.list
 
 # ===== UPDATE =====
-yes | pkg update && yes | pkg upgrade -y
+pkg update -y && pkg upgrade -y
 
 # ===== STORAGE =====
-echo "y" | termux-setup-storage
+termux-setup-storage
 
 # ===== INSTALL PACKAGES =====
-yes | pkg install -y python python-pip clang make libffi openssl libjpeg-turbo libpng zlib freetype git cmake build-essential tsu libexpat
+pkg install -y python python-pip clang make libffi openssl libjpeg-turbo libpng zlib freetype git cmake build-essential tsu libexpat-dev
 
 # ===== PIP SETUP =====
 pip uninstall -y python-psutil 2>/dev/null
