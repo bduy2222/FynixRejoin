@@ -1,9 +1,9 @@
 --====================================================
---  FYNIX ONLINE CHECK SYSTEM (CLIENT SAFE VERSION)
+--  FYNIX ONLINE CHECK SYSTEM (FINAL FIX)
 --====================================================
 
 -- CONFIG
-getgenv().delay = getgenv().delay or 9 -- 8-10 seconds
+getgenv().delay = getgenv().delay or 9
 
 -- SERVICES
 local Players = game:GetService("Players")
@@ -12,139 +12,136 @@ local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 local HttpService = game:GetService("HttpService")
+
 local LocalPlayer = Players.LocalPlayer
 
--- SIMPLE NOTIFY
-local function notify(title, text, time)
-pcall(function()
-StarterGui:SetCore("SendNotification", {
-Title = title,
-Text = text,
-Duration = time or 3
-})
-end)
-end
-
--- PATH ( FIX USERID ONLY)
+--====================================================
+-- PATH (FIX CHUẨN ANDROID)
+--====================================================
 local folderPath = "CheckOnlineFynix"
 local filePath = folderPath .. "/" .. tostring(LocalPlayer.UserId) .. "_online.txt"
 
 -- ENSURE FOLDER
-if not isfolder(folderPath) then
-    makefolder(folderPath)
+pcall(function()
+    if not isfolder(folderPath) then
+        makefolder(folderPath)
+    end
+end)
+
+--====================================================
+-- NOTIFY
+--====================================================
+local function notify(title, text, time)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = time or 3
+        })
+    end)
 end
 
--- BUILD JSON
+--====================================================
+-- BUILD DATA
+--====================================================
 local function buildData(status)
-return {
-placeId = game.PlaceId,
-date = os.date("%Y-%m-%d %H:%M:%S"),
-timestamp = os.time(),
-status = status,
-jobId = game.JobId
-}
+    return {
+        placeId = game.PlaceId,
+        timestamp = os.time(),
+        status = status,
+        jobId = game.JobId
+    }
 end
 
--- SAFE WRITE (JSON)
+--====================================================
+-- WRITE FILE (ANTI FAIL)
+--====================================================
 local function writeState(status)
-pcall(function()
-local data = buildData(status or "Online")
-local encoded = HttpService:JSONEncode(data)
-writefile(filePath, encoded)
-end)
+    local ok, err = pcall(function()
+        local encoded = HttpService:JSONEncode(buildData(status))
+        writefile(filePath, encoded)
+    end)
+
+    if not ok then
+        warn("[FYNIX] Write failed:", err)
+    end
 end
 
--- ENSURE FILE EXISTS
-pcall(function()
-if not isfile(filePath) then
-task.wait(1)
-writeState("Offline")
-end
-end)
-
--- STATE CONTROL
+--====================================================
+-- STATE
+--====================================================
 local onlineActive = false
 local shuttingDown = false
 
+--====================================================
+-- ONLINE (FIX NGAY LẬP TỨC)
+--====================================================
 local function setOnline()
-if shuttingDown then return end
-if onlineActive then return end
-onlineActive = true
-writeState("Online")
+    if shuttingDown then return end
+    if onlineActive then return end
 
-notify("Fynix", "Status: ONLINE", 3)
+    onlineActive = true
 
+    -- 🔥 GHI NGAY LẬP TỨC (QUAN TRỌNG NHẤT)
+    writeState("Online")
+
+    notify("Fynix", "ONLINE", 2)
 end
 
+--====================================================
+-- OFFLINE
+--====================================================
 local function setOffline()
-if shuttingDown then return end
-shuttingDown = true
-onlineActive = false
+    if shuttingDown then return end
 
-writeState("Offline")
+    shuttingDown = true
+    onlineActive = false
 
-notify("Fynix", "Status: OFFLINE", 3)
+    writeState("Offline")
 
+    notify("Fynix", "OFFLINE", 2)
 end
 
 --====================================================
--- LOAD COMPLETE
+-- LOAD
 --====================================================
-
 task.spawn(function()
-notify("Fynix", "Script Loaded", 3)
 
-if not game:IsLoaded() then  
-	game.Loaded:Wait()  
-end  
+    if not game:IsLoaded() then
+        game.Loaded:Wait()
+    end
 
-if LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() then  
-	task.wait(2)  
-	setOnline()  
-end
+    -- 🔥 KHÔNG delay 2s nữa (fix lỗi chính)
+    if LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() then
+        setOnline()
+    end
 
 end)
 
 --====================================================
--- HEARTBEAT (ALWAYS WRITE)
+-- HEARTBEAT (GIỮ ONLINE)
 --====================================================
-
 task.spawn(function()
-while true do
-task.wait(getgenv().delay)
+    while true do
+        task.wait(getgenv().delay)
 
-if onlineActive and not shuttingDown then  
-		local ok, err = pcall(function()  
-			writeState("Online")  
-		end)  
-
-		if not ok then  
-			warn("[FYNIX] writeState failed:", err)  
-		end  
-	end  
-end
-
+        if onlineActive and not shuttingDown then
+            writeState("Online")
+        end
+    end
 end)
 
 --====================================================
--- SMART OFFLINE / REJOIN SYSTEM
+-- ANTI FREEZE + REJOIN
 --====================================================
-
-local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local GuiService = game:GetService("GuiService")
-local LocalPlayer = Players.LocalPlayer
-
 local lastHeartbeat = tick()
 local isRejoining = false
 
--- ===== SAFE REJOIN =====
 local function safeRejoin(reason)
     if isRejoining then return end
     isRejoining = true
 
-    warn("[FYNIX] Rejoining due to:", reason)
+    warn("[FYNIX] Rejoin:", reason)
 
     task.wait(1)
 
@@ -153,9 +150,7 @@ local function safeRejoin(reason)
     end)
 end
 
---====================================================
--- CHARACTER REMOVED (CHỈ REJOIN KHI KHÔNG PHẢI RESET)
---====================================================
+-- CHARACTER LOST
 LocalPlayer.CharacterRemoving:Connect(function()
     task.wait(1)
 
@@ -164,18 +159,14 @@ LocalPlayer.CharacterRemoving:Connect(function()
     end
 end)
 
---====================================================
--- PLAYER REMOVING (DISCONNECT)
---====================================================
+-- DISCONNECT
 Players.PlayerRemoving:Connect(function(plr)
     if plr == LocalPlayer then
-        safeRejoin("PlayerRemoving")
+        safeRejoin("Disconnect")
     end
 end)
 
---====================================================
--- TELEPORT START (IGNORE)
---====================================================
+-- TELEPORT FAIL
 pcall(function()
     LocalPlayer.OnTeleport:Connect(function(state)
         if state == Enum.TeleportState.Failed then
@@ -184,15 +175,12 @@ pcall(function()
     end)
 end)
 
---====================================================
--- ERROR PROMPT (CHỈ CHECK TEXT)
---====================================================
+-- ERROR PROMPT
 pcall(function()
     local CoreGui = game:GetService("CoreGui")
 
     CoreGui.ChildAdded:Connect(function(child)
         if child.Name == "ErrorPrompt" then
-
             local text = ""
 
             pcall(function()
@@ -200,26 +188,22 @@ pcall(function()
             end)
 
             if text ~= "" then
-                safeRejoin("ErrorPrompt: " .. text)
+                safeRejoin(text)
             end
         end
     end)
 end)
 
---====================================================
--- ERROR MESSAGE (FILTER)
---====================================================
+-- ERROR MESSAGE
 pcall(function()
     GuiService.ErrorMessageChanged:Connect(function(msg)
         if msg and msg ~= "" then
-            safeRejoin("ErrorMessage: " .. msg)
+            safeRejoin(msg)
         end
     end)
 end)
 
---====================================================
--- HEARTBEAT CHECK (ANTI FREEZE)
---====================================================
+-- HEARTBEAT TRACK
 RunService.Heartbeat:Connect(function()
     lastHeartbeat = tick()
 end)
@@ -227,7 +211,7 @@ end)
 task.spawn(function()
     while task.wait(5) do
         if tick() - lastHeartbeat > 20 then
-            safeRejoin("Heartbeat freeze")
+            safeRejoin("Freeze")
         end
     end
 end)
