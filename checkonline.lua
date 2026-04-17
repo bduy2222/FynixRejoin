@@ -31,25 +31,120 @@ end)
 --====================================================
 -- NOTIFY
 --====================================================
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+local NOTIFY_STACK = {}
+local SPACING = 70
+
 local function notify(title, text, duration)
+
+    duration = duration or 3
+
+    -- ===== GUI =====
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Parent = game:GetService("CoreGui")
+    screenGui.Name = "FynixNotify"
+    screenGui.Parent = CoreGui
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 250, 0, 60)
-    frame.Position = UDim2.new(1, -260, 1, -80)
-    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    frame.Size = UDim2.new(0, 280, 0, 70)
+    frame.Position = UDim2.new(1, 300, 1, -100) -- start ngoài màn
+    frame.BackgroundColor3 = Color3.fromRGB(18,18,18)
+    frame.BorderSizePixel = 0
     frame.Parent = screenGui
 
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.Text = title .. "\n" .. text
-    label.TextColor3 = Color3.new(1,1,1)
-    label.BackgroundTransparency = 1
-    label.Parent = frame
+    -- bo góc
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = frame
 
-    task.delay(duration or 3, function()
+    -- shadow gi
+    local shadow = Instance.new("Frame")
+    shadow.Size = UDim2.new(1, 10, 1, 10)
+    shadow.Position = UDim2.new(0, -5, 0, -5)
+    shadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    shadow.BackgroundTransparency = 0.7
+    shadow.ZIndex = 0
+    shadow.Parent = frame
+
+    local shadowCorner = Instance.new("UICorner")
+    shadowCorner.CornerRadius = UDim.new(0, 12)
+    shadowCorner.Parent = shadow
+
+    -- TITLE
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, -20, 0.4, 0)
+    titleLabel.Position = UDim2.new(0, 10, 0, 5)
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 16
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = frame
+
+    -- TEXT
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, -20, 0.6, 0)
+    textLabel.Position = UDim2.new(0, 10, 0.4, 0)
+    textLabel.Text = text
+    textLabel.TextColor3 = Color3.fromRGB(220,220,220)
+    textLabel.Font = Enum.Font.Gotham
+    textLabel.TextSize = 14
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextXAlignment = Enum.TextXAlignment.Left
+    textLabel.Parent = frame
+
+    -- ===== STACK POSITION =====
+    table.insert(NOTIFY_STACK, frame)
+
+    for i, f in ipairs(NOTIFY_STACK) do
+        local y = -100 - ((i - 1) * SPACING)
+        TweenService:Create(f, TweenInfo.new(0.25), {
+            Position = UDim2.new(1, -300, 1, y)
+        }):Play()
+    end
+
+    -- ===== SLIDE IN =====
+    TweenService:Create(frame, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -300, 1, frame.Position.Y.Offset)
+    }):Play()
+
+    -- ===== FADE IN =====
+    frame.BackgroundTransparency = 1
+    TweenService:Create(frame, TweenInfo.new(0.3), {
+        BackgroundTransparency = 0
+    }):Play()
+
+    -- ===== AUTO REMOVE =====
+    task.delay(duration, function()
+
+        -- slide out
+        local tween = TweenService:Create(frame, TweenInfo.new(0.3), {
+            Position = UDim2.new(1, 300, 1, frame.Position.Y.Offset)
+        })
+        tween:Play()
+
+        tween.Completed:Wait()
+
+        -- remove khi stack
+        for i, f in ipairs(NOTIFY_STACK) do
+            if f == frame then
+                table.remove(NOTIFY_STACK, i)
+                break
+            end
+        end
+
         screenGui:Destroy()
+
+        -- re-stack li
+        for i, f in ipairs(NOTIFY_STACK) do
+            local y = -100 - ((i - 1) * SPACING)
+            TweenService:Create(f, TweenInfo.new(0.25), {
+                Position = UDim2.new(1, -300, 1, y)
+            }):Play()
+        end
+
     end)
 end
 
@@ -97,7 +192,7 @@ local function setOnline()
     -- ðŸ”¥ GHI NGAY Láº¬P Tá»¨C (QUAN TRá»ŒNG NHáº¤T)
     writeState("Online")
 
-    notify("Fynix", "ONLINE", 2)
+    notify("Fynix", "ONLINE", 3)
 end
 
 --====================================================
