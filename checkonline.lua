@@ -31,13 +31,25 @@ end)
 --====================================================
 -- NOTIFY
 --====================================================
-local function notify(title, text, time)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = time or 3
-        })
+local function notify(title, text, duration)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = game:GetService("CoreGui")
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 250, 0, 60)
+    frame.Position = UDim2.new(1, -260, 1, -80)
+    frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+    frame.Parent = screenGui
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = title .. "\n" .. text
+    label.TextColor3 = Color3.new(1,1,1)
+    label.BackgroundTransparency = 1
+    label.Parent = frame
+
+    task.delay(duration or 3, function()
+        screenGui:Destroy()
     end)
 end
 
