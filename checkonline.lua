@@ -124,12 +124,27 @@ task.spawn(function()
     end
 
     -- 🔥 KHÔNG delay 2s nữa (fix lỗi chính)
-    if LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait() then
-        setOnline()
-    end
+    
 
 end)
+-- ONLINE NGAY KHI GAME LOAD (KH�NG CH CHARACTER)
+task.spawn(function()
 
+    if not game:IsLoaded() then
+        game.Loaded:Wait()
+    end
+
+    --  SET ONLINE NGAY
+    setOnline()
+
+    --  OPTIONAL: m bo character vn sync
+    task.spawn(function()
+        if not LocalPlayer.Character then
+            LocalPlayer.CharacterAdded:Wait()
+        end
+    end)
+
+end)
 --====================================================
 -- HEARTBEAT (GIỮ ONLINE)
 --====================================================
