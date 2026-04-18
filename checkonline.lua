@@ -1,6 +1,8 @@
 --====================================================
--- FYNIX ONLINE CHECK (NO CONFLICT MODE)
+-- FYNIX ONLINE CHECK (NO CONFLICT + AUTO UPDATE)
 --====================================================
+
+getgenv().delay = getgenv().delay or 10
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -27,8 +29,12 @@ local function buildData(status)
     }
 end
 
--- WRITE (KHÔNG SPAM)
+-- WRITE (ANTI SPAM NHẸ)
+local lastWrite = 0
 local function writeState(status)
+    if tick() - lastWrite < 2 then return end
+    lastWrite = tick()
+
     pcall(function()
         writefile(filePath, HttpService:JSONEncode(buildData(status)))
     end)
@@ -41,19 +47,21 @@ end
 
 writeState("Online")
 
--- UPDATE KHI RESPAWN (NHẸ)
+-- AUTO UPDATE (NHẸ - KHÔNG XUNG ĐỘT)
+task.spawn(function()
+    while task.wait(getgenv().delay) do
+        writeState("Online")
+    end
+end)
+
+-- RESPAWN UPDATE
 LocalPlayer.CharacterAdded:Connect(function()
     task.delay(2, function()
         writeState("Online")
     end)
 end)
 
--- EXIT
--- OFFLINE HANDLER (CLIENT ONLY FIX)
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
+-- OFFLINE HANDLER
 local called = false
 
 local function setOfflineSafe()
@@ -65,18 +73,21 @@ local function setOfflineSafe()
     end)
 end
 
--- trigger chính (ổn định nhất client có)
 Players.PlayerRemoving:Connect(function(plr)
     if plr == LocalPlayer then
         setOfflineSafe()
     end
 end)
 
--- NOTIFY NHẸ (KHÔNG TWEEN)
+-- NOTIFY
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Fynix",
-        Text = "Loaded (Safe Mode)",
+        Text = "Auto Update Enabled",
         Duration = 3
     })
 end)
+
+--====================================================
+-- END
+--====================================================
