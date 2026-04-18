@@ -48,11 +48,23 @@ end
 writeState("Online")
 
 -- AUTO UPDATE (NHẸ - KHÔNG XUNG ĐỘT)
-task.spawn(function()
-    while task.wait(getgenv().delay) do
+-- AUTO UPDATE (NO CONFLICT)
+
+local running = true
+
+local function scheduleUpdate()
+    if not running then return end
+
+    task.delay(getgenv().delay, function()
+        if not running then return end
+
         writeState("Online")
-    end
-end)
+        scheduleUpdate() -- gọi lại nhưng không loop cứng
+    end)
+end
+
+-- start
+scheduleUpdate()
 
 -- RESPAWN UPDATE
 LocalPlayer.CharacterAdded:Connect(function()
