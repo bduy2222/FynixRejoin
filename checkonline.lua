@@ -90,7 +90,34 @@ Players.PlayerRemoving:Connect(function(plr)
         setOfflineSafe()
     end
 end)
+_G.AutoRejoin = true
+spawn(function()
+    while wait() do
+        pcall(function()
+            if _G.AutoRejoin then
+                -- chỉ connect 1 lần, tránh leak connection
+                if not getgenv().rejoin then
+                    getgenv().rejoin =
+                        game:GetService("CoreGui")
+                        .RobloxPromptGui
+                        .promptOverlay
+                        .ChildAdded:Connect(function(child)
 
+                            pcall(function()
+                                if child.Name == "ErrorPrompt"
+                                    and child:FindFirstChild("MessageArea")
+                                    and child.MessageArea:FindFirstChild("ErrorFrame") then
+
+                                    game:GetService("TeleportService"):Teleport(game.PlaceId)
+                                end
+                            end)
+
+                        end)
+                end
+            end
+        end)
+    end
+end)
 -- NOTIFY
 pcall(function()
     game:GetService("StarterGui"):SetCore("SendNotification", {
