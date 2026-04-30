@@ -1,0 +1,421 @@
+-- Fynix Hub - Auto Bounty [ Premium ]
+-- by tài
+
+local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local PlayerGui = LP:WaitForChild("PlayerGui")
+
+local serverButton = PlayerGui:WaitForChild("Topbar"):WaitForChild("Frame"):WaitForChild("ServerBrowserButton")
+if not CollectionService:HasTag(serverButton, "OpenServerBrowser") then
+    CollectionService:AddTag(serverButton, "OpenServerBrowser")
+end
+
+local browserUI = PlayerGui:WaitForChild("ServerBrowser").Frame
+local statusLabel = browserUI:WaitForChild("TextLabel")
+local scrollFrame = browserUI:WaitForChild("ScrollingFrame")
+local fakeScroll = browserUI:WaitForChild("FakeScroll").Inside
+
+local function startProcess()
+    local openBtn = CollectionService:GetTagged("OpenServerBrowser")[1]
+    if openBtn and firesignal then
+        firesignal(openBtn.MouseButton1Click)
+    end
+    while task.wait(0.1) do
+        if statusLabel.Visible then
+            scrollFrame.CanvasPosition = Vector2.new(0, scrollFrame.CanvasPosition.Y + 100)
+            if scrollFrame.CanvasPosition.Y > scrollFrame.CanvasSize.Y.Offset then
+                scrollFrame.CanvasPosition = Vector2.new(0, 0)
+            end
+        end
+        local children = fakeScroll:GetChildren()
+        if children[4] and children[4]:FindFirstChild("Join") then
+            local joinBtn = children[4].Join
+            if firesignal then
+                firesignal(joinBtn.MouseButton1Click)
+                firesignal(joinBtn.Activated)
+            end
+        end
+    end
+end
+task.spawn(startProcess)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaScriptRBL/Blox-Fruits/refs/heads/main/fastattack.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaScriptRBL/Blox-Fruits/refs/heads/main/fastattack.lua"))() 
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaScriptRBL/Blox-Fruits/refs/heads/main/fastattack.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaScriptRBL/Blox-Fruits/refs/heads/main/fastattack.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaScriptRBL/Blox-Fruits/refs/heads/main/fastattack.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/LuaScriptRBL/Blox-Fruits/refs/heads/main/p%E1%BB%8Ba.lua"))()
+
+local lp = game:GetService("Players").LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local lastTargets = {}
+local targetStartTime = 0
+getgenv().StopFarm = false -- Luôn luôn chạy
+getgenv().BlackListPlayer = getgenv().BlackListPlayer or {}
+
+-- AUTO EQUIP TOOL
+task.spawn(function()
+    while true do
+        if not getgenv().StopFarm and lp.Character and lp.Character:FindFirstChild("Humanoid") then
+            local toolInHand = lp.Character:FindFirstChildOfClass("Tool")
+            if not (toolInHand and (toolInHand.Name:find("Fruit") or toolInHand.ToolTip == "Blox Fruit")) then
+                for _, v in pairs(lp.Backpack:GetChildren()) do
+                    if v:IsA("Tool") and (v.Name:find("Fruit") or v.ToolTip == "Blox Fruit") then
+                        lp.Character.Humanoid:EquipTool(v) break
+                    end
+                end
+            end
+        end
+        task.wait(0)
+    end
+end)
+
+local function IsPlayerInUI(targetPlayer)
+    if not targetPlayer or getgenv().BlackListPlayer[targetPlayer.Name] then return false end
+    
+    if lp.Team and lp.Team.Name == "Marines" then
+        if targetPlayer.Team and targetPlayer.Team.Name == "Marines" then
+            return false 
+        end
+    end
+
+    local gui = game:GetService("CoreGui"):FindFirstChild("FynixHub_System")
+    local list = gui and gui:FindFirstChild("ScrollingFrame", true)
+    if list then
+        for _, v in pairs(list:GetChildren()) do
+            if v:IsA("Frame") and v:FindFirstChildOfClass("TextLabel") and v:FindFirstChildOfClass("TextLabel").Text:find(targetPlayer.Name) then
+                return true 
+            end
+        end
+    end
+    return false
+end
+
+local function GetTwoTargetsFromUI()
+    local gui = game:GetService("CoreGui"):FindFirstChild("FynixHub_System")
+    local list = gui and gui:FindFirstChild("ScrollingFrame", true)
+    local validPlayers = {}
+    if list then
+        for _, v in pairs(list:GetChildren()) do
+            if v:IsA("Frame") and v.Name ~= "UIListLayout" then
+                local txt = v:FindFirstChildOfClass("TextLabel")
+                if txt then
+                    local name = txt.Text:split(" [")[1]
+                    local p = game:GetService("Players"):FindFirstChild(name)
+                    if p and not getgenv().BlackListPlayer[p.Name] and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                        if lp.Team and lp.Team.Name == "Marines" and p.Team and p.Team.Name == "Marines" then
+                        else
+                            table.insert(validPlayers, p)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    local selected = {}
+    if #validPlayers > 0 then
+        targetStartTime = tick()
+        table.insert(selected, validPlayers[math.random(1, #validPlayers)])
+        if #validPlayers > 1 then
+            local p2 = validPlayers[math.random(1, #validPlayers)]
+            while p2 == selected[1] do p2 = validPlayers[math.random(1, #validPlayers)] end
+            table.insert(selected, p2)
+        end
+    end
+    return selected
+end
+
+-- ANTI FALL
+task.spawn(function()
+    while task.wait(0) do
+        pcall(function()
+            local char = lp.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChild("Humanoid")
+            
+            if root and hum and hum.Health > 0 then
+                if root.Velocity.Y < -1 then
+                    root.Velocity = Vector3.new(root.Velocity.X, 0, root.Velocity.Z)
+                end
+
+                if root.Position.Y > 1000 and not resetting then
+                    resetting = true
+                    hum.Health = 0 
+                    task.delay(0.5, function() resetting = false end)
+                end
+            end
+        end)
+    end
+end)
+
+-- MOVEMENT LOGIC
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        local char = lp.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChild("Humanoid")
+        
+        if root and hum then
+            local needNew = #lastTargets == 0
+            for i, t in pairs(lastTargets) do
+                if not (t and t.Parent and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and t.Character.Humanoid.Health > 0 and IsPlayerInUI(t)) then
+                    needNew = true
+                end
+            end
+            if needNew then lastTargets = GetTwoTargetsFromUI() end
+
+            if #lastTargets > 0 then
+                toggle = not toggle
+                local currentT = (toggle and lastTargets[1]) or (lastTargets[2] or lastTargets[1])
+                local tRoot = currentT.Character.HumanoidRootPart
+                
+                if hum.Health == 0 then
+                    root.CFrame = tRoot.CFrame
+                    root.Velocity = Vector3.new(0,0,0)
+                end
+
+                if hum.Health > (hum.MaxHealth * 0.1) then
+                    root.CFrame = CFrame.new(root.Position.X, root.Position.Y + 2500, root.Position.Z)
+                    root.Velocity = Vector3.new(0,0,0)
+                end
+
+                for _, v in pairs(char:GetDescendants()) do
+                    if v:IsA("BasePart") then v.CanCollide = false end
+                end
+            end
+        end
+    end)
+end)
+
+-- AUTO BROWSER
+local OPEN_TAG = "AutoOpenBrowser"
+local BUTTON_PATH = lp:WaitForChild("PlayerGui"):WaitForChild("Topbar"):WaitForChild("Frame"):WaitForChild("ServerBrowserButton")
+if not CollectionService:HasTag(BUTTON_PATH, OPEN_TAG) then CollectionService:AddTag(BUTTON_PATH, OPEN_TAG) end
+
+task.spawn(function()
+    while true do
+        task.wait(10)
+        if #lastTargets == 0 then
+            local btn = CollectionService:GetTagged(OPEN_TAG)[1]
+            if btn then
+                if firesignal then firesignal(btn.MouseButton1Click); firesignal(btn.Activated)
+                else for _, v in ipairs(getconnections(btn.MouseButton1Click)) do v:Fire() end end
+            end
+        end
+    end
+end)
+
+-- HAKI & BLACKLIST TIMER
+task.spawn(function()
+    while task.wait() do
+        if #lastTargets > 0 and (tick() - targetStartTime) > 40 then
+            for _, t in pairs(lastTargets) do
+                if t and IsPlayerInUI(t) then getgenv().BlackListPlayer[t.Name] = true end
+            end
+            lastTargets = {} 
+        end
+        pcall(function()
+            if lp.Character and not lp.Character:FindFirstChild("HasBuso") then
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("Buso")
+            end
+        end)
+    end
+end)
+-- FYNIX PREMIUM UI FIX FULL (INTEGRATED WITH BANANA CAT HUB)
+
+-- remove old
+if game.CoreGui:FindFirstChild("FynixUI") then
+    game.CoreGui.FynixUI:Destroy()
+end
+if game.CoreGui:FindFirstChild("FynixToggle") then
+    game.CoreGui.FynixToggle:Destroy()
+end
+
+-- INITIALIZE GLOBAL VARIABLES
+getgenv().UIEnabled = true
+getgenv().Status = "Farming"
+getgenv().LastGain = 0
+
+local TweenService = game:GetService("TweenService")
+
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "FynixUI"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0,500,0,380)
+main.Position = UDim2.new(0.5,-250,0.5,-190)
+main.BackgroundColor3 = Color3.fromRGB(8,8,15)
+main.BorderSizePixel = 0
+main.Visible = true
+
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,20)
+
+-- BACKGROUND GRADIENT
+local bgGrad = Instance.new("UIGradient")
+bgGrad.Parent = main
+bgGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 10, 25)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 8, 35)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 15, 30))
+}
+
+-- STROKE
+local stroke = Instance.new("UIStroke")
+stroke.Parent = main
+stroke.Thickness = 3
+stroke.LineJoinMode = Enum.LineJoinMode.Round
+stroke.Color = Color3.fromRGB(255, 0, 180)
+
+local grad = Instance.new("UIGradient")
+grad.Parent = stroke
+grad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,180)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120,0,255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0,220,255))
+}
+
+-- TITLE
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0,55)
+title.BackgroundTransparency = 1
+title.Text = "FYNIX AUTO BOUNTY"
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 28
+title.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- LINE CREATOR
+local function line(y)
+    local l = Instance.new("TextLabel", main)
+    l.Size = UDim2.new(1,-30,0,35)
+    l.Position = UDim2.new(0,15,0,y)
+    l.BackgroundTransparency = 1
+    l.Font = Enum.Font.GothamBold
+    l.TextSize = 16 -- Giảm nhẹ size để hiển thị đủ 2 player kèm HP
+    l.TextColor3 = Color3.fromRGB(220,220,220)
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    return l
+end
+
+local targetLabel = line(65)
+local uptime = line(105)
+local current = line(145)
+local gain = line(185)
+
+-- STATUS (HALF WIDTH)
+local status = Instance.new("TextLabel", main)
+status.Size = UDim2.new(0.5, -20, 0, 60)
+status.Position = UDim2.new(0, 15, 0, 235)
+status.BackgroundTransparency = 0.1
+status.BackgroundColor3 = Color3.fromRGB(0, 255, 180)
+status.Font = Enum.Font.GothamBlack
+status.TextSize = 22
+status.TextColor3 = Color3.fromRGB(0, 20, 30)
+status.Text = "Status: Farming"
+Instance.new("UICorner", status).CornerRadius = UDim.new(0,12)
+
+-- SKIP BUTTON (NEXT TO STATUS)
+local skipBtn = Instance.new("TextButton", main)
+skipBtn.Size = UDim2.new(0.5, -20, 0, 60)
+skipBtn.Position = UDim2.new(0.5, 5, 0, 235)
+skipBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+skipBtn.Font = Enum.Font.GothamBlack
+skipBtn.TextSize = 18
+skipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+skipBtn.Text = "SKIP TARGET"
+Instance.new("UICorner", skipBtn).CornerRadius = UDim.new(0,12)
+
+-- SKIP LOGIC
+skipBtn.MouseButton1Click:Connect(function()
+    local targets = _G.lastTargets or lastTargets
+    if targets then
+        for _, t in pairs(targets) do
+            if t and t.Name then 
+                getgenv().BlackListPlayer[t.Name] = true 
+            end
+        end
+        if _G.lastTargets then _G.lastTargets = {} end
+        if lastTargets then lastTargets = {} end
+    end
+end)
+
+-- BOUNTY TRACKING
+local lp = game:GetService("Players").LocalPlayer
+local oldBounty = 0
+local bountyValue = nil
+local start = tick()
+
+if lp:WaitForChild("leaderstats", 5) then
+    bountyValue = lp.leaderstats:FindFirstChild("Bounty/Honor") or lp.leaderstats:FindFirstChild("Bounty")
+    if bountyValue then
+        oldBounty = bountyValue.Value
+        bountyValue.Changed:Connect(function(newVal)
+            if newVal > oldBounty then getgenv().LastGain = newVal - oldBounty end
+            oldBounty = newVal
+        end)
+    end
+end
+
+-- UI UPDATE LOOP
+task.spawn(function()
+    while true do
+        task.wait(0.3)
+        local t = math.floor(tick() - start)
+
+        local targets = _G.lastTargets or lastTargets
+        
+        if targets and #targets > 0 then
+            local targetStrings = {}
+            for _, p in pairs(targets) do
+                local hp = "N/A"
+                if p.Character and p.Character:FindFirstChild("Humanoid") then
+                    hp = math.floor(p.Character.Humanoid.Health)
+                end
+                table.insert(targetStrings, p.Name .. " [" .. hp .. "]")
+            end
+            
+            local finalString = table.concat(targetStrings, " & ")
+            targetLabel.Text = "Target: " .. finalString
+        else
+            targetLabel.Text = "Target: Searching..."
+        end
+
+        uptime.Text = "Uptime: "..t.."s"
+        if bountyValue then
+            current.Text = "Current: "..tostring(bountyValue.Value)
+        else
+            current.Text = "Current: N/A"
+        end
+        gain.Text = "Gain: +"..tostring(getgenv().LastGain or 0)
+        
+        -- Update Status
+        if getgenv().StopFarm then
+            status.Text = "Status: Stopped"
+            status.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+        else
+            status.Text = "Status: Farming"
+            status.BackgroundColor3 = Color3.fromRGB(0, 255, 180)
+        end
+    end
+end)
+
+-- TOGGLE BUTTON
+local tgui = Instance.new("ScreenGui", game.CoreGui)
+tgui.Name = "FynixToggle"
+local btn = Instance.new("TextButton", tgui)
+btn.Size = UDim2.new(0,65,0,65)
+btn.Position = UDim2.new(0,20,0.8,0)
+btn.BackgroundColor3 = Color3.fromRGB(255, 0, 180)
+btn.Text = "CLOSE"
+btn.Font = Enum.Font.GothamBlack
+btn.TextSize = 20
+btn.TextColor3 = Color3.fromRGB(255,255,255)
+Instance.new("UICorner", btn).CornerRadius = UDim.new(0,15)
+
+btn.MouseButton1Click:Connect(function()
+    getgenv().UIEnabled = not getgenv().UIEnabled
+    main.Visible = getgenv().UIEnabled
+    btn.Text = getgenv().UIEnabled and "CLOSE" or "OPEN"
+end)
