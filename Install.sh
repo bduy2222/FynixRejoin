@@ -1,32 +1,58 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
+set -e
+set -o pipefail
+
+# ===== CHECK TERMUX =====
+[ -z "$PREFIX" ] && exit 1
+
 # ===== FIX REPO =====
-printf "deb https://packages.termux.dev/apt/termux-main stable main\n" > $PREFIX/etc/apt/sources.list
+echo "deb https://packages.termux.dev/apt/termux-main stable main" > $PREFIX/etc/apt/sources.list 2>/dev/null || true
 
 # ===== UPDATE =====
-pkg update -y && pkg upgrade -y
+pkg update -y
+pkg upgrade -y
 
 # ===== STORAGE =====
-termux-setup-storage
+if [ ! -d "$HOME/storage" ]; then
+    termux-setup-storage
+    sleep 2
+fi
 
-# ===== WAKELOCK (ðŸ”¥ QUAN TRá»ŒNG) =====
-echo "[*] Enabling wakelock..."
-termux-wake-lock
+# ===== WAKELOCK =====
+termux-wake-lock 2>/dev/null || true
 
-# ===== OPTIONAL: KEEP CPU ON (ANTI DOZE) =====
-# trÃ¡nh android kill app khi idle
-settings put global stay_on_while_plugged_in 3 2>/dev/null
+# ===== ANTI SLEEP =====
+settings put global stay_on_while_plugged_in 3 2>/dev/null || true
 
-# ===== INSTALL PACKAGES =====
-pkg install -y python python-pip clang make libffi openssl libjpeg-turbo libpng zlib freetype git cmake build-essential tsu libexpat-dev python-psutil
+# ===== INSTALL CORE =====
+pkg install -y \
+python git curl wget clang make cmake \
+libffi openssl libjpeg-turbo libpng zlib freetype \
+tsu libexpat
 
-# ===== PIP SETUP =====
-pip uninstall -y python-psutil 2>/dev/null
+# ===== FIX PSUTIL ( QUAN TRNG NHT) =====
+pip uninstall -y psutil python-psutil 2>/dev/null || true
+pkg install -y python-psutil   #  KHÔNG dùng pip na
 
-pip install --upgrade pip setuptools wheel
+# ===== FIX PIP (KHÔNG phá Termux) =====
+python -m ensurepip --upgrade 2>/dev/null || true
+pip install --upgrade setuptools wheel
 
+# ===== INSTALL LIBS (KHÔNG psutil) =====
 pip install --prefer-binary \
-requests pytz pyjwt pycryptodome rich colorama flask pillow psutil discord.py python-socketio prettytable \
-|| CFLAGS="-Wno-error=implicit-function-declaration"
+requests pytz pyjwt pycryptodome rich colorama flask pillow discord.py python-socketio prettytable
 
-echo "[DONE] Setup Done"
+# ===== FIX SSL =====
+pkg install -y ca-certificates
+update-ca-certificates 2>/dev/null || true
+pip install certifi --upgrade
+
+# ===== FIX CURL ( FIX LI CURL) =====
+pkg install -y curl wget
+curl --version >/dev/null || echo "[WARN] curl issue"
+
+# ===== PATH =====
+export PATH=$PREFIX/bin:$PATH
+
+echo "[DONE] Setup hoàn tt"
