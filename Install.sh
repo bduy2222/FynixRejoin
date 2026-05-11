@@ -21,7 +21,7 @@ fi
 
 export PATH=$PREFIX/bin:$PATH
 
-===== FIX DNS (curl SSL fix) =====
+===== FIX DNS =====
 
 mkdir -p $PREFIX/etc
 
@@ -34,7 +34,7 @@ cat > $PREFIX/etc/apt/sources.list << EOF
 deb https://packages.termux.dev/apt/termux-main stable main
 EOF
 
-===== CLEAN BROKEN CACHE =====
+===== CLEAN CACHE =====
 
 rm -rf $PREFIX/var/lib/apt/lists/*
 apt clean
@@ -42,7 +42,6 @@ apt clean
 ===== UPDATE =====
 
 pkg update -y
-pkg install -y termux-tools
 
 ===== STORAGE =====
 
@@ -86,15 +85,13 @@ pkg reinstall curl -y
 
 pkg reinstall openssl ca-certificates -y
 
-===== PIP SAFE =====
+===== UPDATE PIP =====
 
 python -m pip install --upgrade pip setuptools wheel --no-cache-dir
 
-===== REMOVE BROKEN PSUTIL =====
+===== FIX PSUTIL =====
 
 pip uninstall -y psutil python-psutil 2>/dev/null
-
-===== INSTALL PSUTIL SAFELY =====
 
 pkg install -y python-psutil || 
 pip install psutil --prefer-binary --no-cache-dir
