@@ -5,8 +5,7 @@ export FORCE_UNSAFE_CONFIGURE=1
 
 termux-wake-lock
 
-pkg install -y termux-tools --no-user-config
-termux-change-repo auto
+sed -i 's|backend.termux.org|mirrors.tuna.tsinghua.edu.cn/termux|g' $PREFIX/etc/apt/sources.list
 
 dpkg --configure -a
 apt-get update -y -q
@@ -17,7 +16,7 @@ if [ ! -d "$HOME/storage" ]; then
     sleep 2
 fi
 
-pkg install -y python clang make libffi openssl libjpeg-turbo libpng zlib freetype git cmake build-essential tsu libexpat ndk-sysroot --no-user-config
+pkg install -y termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git cmake build-essential tsu libexpat ndk-sysroot --no-user-config
 
 pip install --upgrade pip setuptools wheel --no-cache-dir
 
