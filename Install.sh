@@ -6,8 +6,6 @@ export FORCE_UNSAFE_CONFIGURE=1
 
 # Tối ưu hóa cờ biên dịch C giảm tải cho CPU ảo x86_64
 export CFLAGS="-O2 -pipe -Wno-implicit-function-declaration -Wno-int-conversion"
-
-# GIẢI PHÁP SỬA LỖI PILLOW: Ép trình liên kết loại bỏ hoàn toàn các thư viện hệ thống ARM (/system/lib) gây xung đột kiến trúc x86_64
 export LDFLAGS="-Wl,--allow-shlib-undefined -L$PREFIX/lib"
 
 # Ép tất cả các thư viện nặng dùng bản thuần Python (Pure Python) - Tiết kiệm thời gian build
@@ -34,14 +32,14 @@ if [ ! -d "$HOME/storage" ]; then
     sleep 2
 fi
 
-# Cài đặt các gói biên dịch bắt buộc, bổ sung thêm libandroid-posix-semaphore chống lỗi build nền tảng
+# Cài đặt các gói biên dịch bắt buộc, bổ sung thêm gói python-pillow có sẵn của hệ thống Termux để vá lỗi build wheel
 apt-get install -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" \
-    termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git ndk-sysroot libwebp
+    termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git ndk-sysroot libwebp python-pillow
 
 # Nâng cấp pip và ép thiết lập cấu hình đóng gói tăng tốc cài đặt
 pip install --upgrade pip setuptools wheel --no-cache-dir
 
-# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ SỬA LỖI LINK GIT ĐẦY ĐỦ) ---
+# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ ĐỔI SANG LINK CHUẨN ĐẦY ĐỦ) ---
 cd $HOME && rm -rf psutil
 git clone --depth 1 https://github.com
 cd psutil
@@ -54,8 +52,8 @@ cd $HOME && rm -rf psutil
 # Cụm 1: Các gói xử lý mạng và cấu trúc cơ bản không cần biên dịch
 pip install --prefer-binary --no-cache-dir multidict yarl requests pytz pyjwt rich colorama flask python-socketio prettytable
 
-# Cụm 2: Các gói mã hóa và xử lý hình ảnh (Sử dụng LDFLAGS đã dọn dẹp biến ARM phía trên)
-pip install --prefer-binary --no-cache-dir pycryptodome pillow
+# Cụm 2: Các gói mã hóa (Pillow đã được cài qua bản pre-built hệ thống nên không cần cài đè mã nguồn lỗi)
+pip install --prefer-binary --no-cache-dir pycryptodome
 
 # Cụm 3: Các gói dịch vụ bất đồng bộ và Bot (Bỏ qua hoàn toàn extension C)
 pip install --prefer-binary --no-cache-dir audioop-lts aiohttp discord.py
