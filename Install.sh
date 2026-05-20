@@ -13,8 +13,8 @@ export YARL_NO_EXTENSIONS=1
 
 termux-wake-lock
 
-# Cấu hình lại mirror nếu file nguồn cũ bị lỗi
-sed -i 's|backend.termux.org|mirrors.tuna.tsinghua.edu.cn/termux|g' $PREFIX/etc/apt/sources.list
+# GIẢI PHÁP TĂNG TỐC: Xóa sạch danh sách nguồn cũ và ép Termux dùng Mirror Việt Nam (bởi Nguyen Hoang) có băng thông 1Gbps ổn định
+echo "deb https://mirrors.nguyenhoang.cloud/termux/termux-main stable main" > $PREFIX/etc/apt/sources.list
 
 dpkg --configure -a
 apt-get update -y -q
@@ -25,7 +25,7 @@ if [ ! -d "$HOME/storage" ]; then
     sleep 3
 fi
 
-# Đã sửa lỗi: Dùng apt-get thay vì pkg để chấp nhận các cờ ghi đè cấu hình hệ thống chính xác
+# Dùng apt-get cài đặt qua mirror mới sẽ nhanh hơn rất nhiều
 apt-get install -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git cmake build-essential tsu libexpat ndk-sysroot libwebp
 
 # Cập nhật pip và các công cụ đóng gói nền tảng lên bản mới nhất
@@ -34,7 +34,7 @@ pip install --upgrade pip setuptools wheel --no-cache-dir
 # --- Build & cài đặt psutil tối ưu cho Android ---
 cd $HOME
 rm -rf psutil
-git clone --depth 1 https://github.com/giampaolo/psutil.git
+git clone --depth 1 https://github.com
 cd psutil
 sed -i 's/sys.platform.startswith("linux")/sys.platform.startswith(("linux", "android"))/g' psutil/_common.py
 pip install . --no-cache-dir
