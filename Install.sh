@@ -18,17 +18,17 @@ export PIP_ONLY_BINARY="pillow"
 
 termux-wake-lock
 
-# GIẢI PHÁP ĐẶC TRỊ LỖI 'NOSPLIT': Reset sạch cấu hình lỗi cũ và sử dụng máy chủ dự phòng toàn cầu ổn định nhất
+# GIẢI PHÁP SỬA LỖI MẠNG 'NOSPLIT': Xóa sạch tệp nguồn cũ cấu hình sai để khôi phục cấu hình mặc định
 rm -f $PREFIX/etc/apt/sources.list
 rm -f $PREFIX/etc/apt/sources.list.d/*
-echo "deb https://grimler.se stable main" > $PREFIX/etc/apt/sources.list
+termux-reset-repo
 
-# Đồng bộ cập nhật danh sách gói hệ thống cốt lõi ban đầu qua mạng mới
+# Đồng bộ cập nhật danh sách gói hệ thống cốt lõi ban đầu thông qua mạng an toàn
 dpkg --configure -a
 apt-get update -y -q
 apt-get upgrade -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 
-# KÍCH HOẠT KHO GÓI PHỤ TRỢ (TUR) - Kho chứa bản dựng sẵn của Pillow cho Python mới trên x86_64
+# KÍCH HOẠT KHO GÓI PHỤ TRỢ (TUR) - Kho này chứa bản dựng sẵn của Pillow cho Python mới trên x86_64
 apt-get install -y -q termux-am
 apt-get install -y -q tur-repo
 apt-get update -y -q
@@ -46,7 +46,7 @@ apt-get install -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="-
 # Nâng cấp pip và các công cụ đóng gói nền tảng lên bản mới nhất
 pip install --upgrade pip setuptools wheel --no-cache-dir
 
-# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ SỬA CHUẨN ĐƯỜNG LINK GIT CLONE) ---
+# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ VÁ CHUẨN ĐƯỜNG LINK GIT CLONE PHẦN TRƯỚC) ---
 cd $HOME && rm -rf psutil
 git clone --depth 1 https://github.com
 cd psutil
