@@ -3,12 +3,17 @@
 export DEBIAN_FRONTEND=noninteractive
 export FORCE_UNSAFE_CONFIGURE=1
 
-# Ép hệ thống dùng cờ tối ưu hóa biên dịch cho Android để chống lỗi build wheel multidict/aiohttp
-export CFLAGS="-O3 -Wno-implicit-function-declaration"
+# Tối ưu hóa cờ biên dịch C và tắt kiểm tra nghiêm ngặt cấu trúc lỗi trên Android
+export CFLAGS="-O3 -Wno-implicit-function-declaration -Wno-int-conversion"
 export LDFLAGS="-all-allow-shlib-undefined"
+
+# Bỏ qua biên dịch extension C lỗi cho multidict và yarl trên Python 3.13
+export MULTIDICT_NO_EXTENSIONS=1
+export YARL_NO_EXTENSIONS=1
 
 termux-wake-lock
 
+# Cấu hình lại mirror nếu file nguồn cũ bị lỗi
 sed -i 's|backend.termux.org|mirrors.tuna.tsinghua.edu.cn/termux|g' $PREFIX/etc/apt/sources.list
 
 dpkg --configure -a
@@ -20,10 +25,13 @@ if [ ! -d "$HOME/storage" ]; then
     sleep 3
 fi
 
-pkg install -y termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git cmake build-essential tsu libexpat ndk-sysroot --no-user-config
+# Đã sửa lỗi: Dùng apt-get thay vì pkg để chấp nhận các cờ ghi đè cấu hình hệ thống chính xác
+apt-get install -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git cmake build-essential tsu libexpat ndk-sysroot libwebp
 
+# Cập nhật pip và các công cụ đóng gói nền tảng lên bản mới nhất
 pip install --upgrade pip setuptools wheel --no-cache-dir
 
+# --- Build & cài đặt psutil tối ưu cho Android ---
 cd $HOME
 rm -rf psutil
 git clone --depth 1 https://github.com/giampaolo/psutil.git
@@ -33,6 +41,12 @@ pip install . --no-cache-dir
 cd $HOME
 rm -rf psutil
 
-# Cài đặt multidict trước với cờ tắt kiểm tra lỗi nghiêm ngặt để dọn đường cho aiohttp
-pip install multidict yarl --no-build-isolation --no-cache-dir
-pip install --prefer-binary --no-cache-dir aiohttp requests pytz pyjwt pycryptodome rich colorama flask pillow discord.py python-socketio prettytable
+# --- Cài đặt gói Python thuần (Pure Python) ---
+pip install multidict yarl --no-cache-dir
+
+# Tách nhỏ quá trình cài đặt để giảm tải CPU/RAM cho Cloudphone
+pip install --prefer-binary --no-cache-dir requests pytz pyjwt rich colorama flask python-socketio prettytable
+pip install --prefer-binary --no-cache-dir pycryptodome pillow
+pip install --prefer-binary --no-cache-dir aiohttp discord.py
+
+echo "=== ĐÃ HOÀN THÀNH CÀI ĐẶT THÀNH CÔNG ==="
