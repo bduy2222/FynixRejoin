@@ -53,7 +53,7 @@ apt-get upgrade -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--fo
 # Cài đặt gói cơ bản
 apt-get install -y termux-am termux-tools
 
-# Tự động thêm repo TUR bản chuẩn (Kho lưu trữ dành cho các gói bổ sung của Termux)
+# Tự động thêm repo TUR bản chuẩn (Kho lưu trữ chứa sẵn bản dựng psutil cho Android)
 echo "deb [trusted=yes] https://cyberasylum.org/apt/termux-tur tur main" > $PREFIX/etc/apt/sources.list.d/tur.list
 apt-get update -y
 
@@ -67,29 +67,14 @@ fi
 apt-get install -y -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" \
     python clang make libffi openssl libjpeg-turbo libpng zlib freetype git ndk-sysroot libwebp
 
+# ==================== CÀI ĐẶT GÓI PSUTIL DỰNG SẴN ====================
+echo "=== CÀI ĐẶT PSUTIL BẢN DỰNG SẴN CHỐNG LỖI PLATFORM ==="
+# Cài đặt trực tiếp từ kho TUR, bỏ qua hoàn toàn bước biên dịch lỗi của pip
+apt-get install -y python-psutil
+# ==================================================================================
+
 # Nâng cấp Pip, Setuptools và Wheel lên bản mới nhất
 pip install --upgrade pip setuptools wheel --no-cache-dir
-
-# ==================== BẺ KHÓA VÀ CÀI ĐẶT PSUTIL ====================
-echo "=== ĐANG TẢI VÀ BẺ KHÓA GÓI PSUTIL CHO ANDROID ==="
-cd $HOME
-rm -rf psutil
-
-# Tải mã nguồn gốc của psutil trực tiếp từ kho GitHub chính thức
-git clone --depth 1 https://github.com/giampaolo/psutil.git
-cd psutil
-
-# Vượt qua bộ lọc hệ điều hành: Ép psutil coi hệ điều hành Android tương đương với Linux
-sed -i 's/sys.platform.startswith("linux")/sys.platform.startswith(("linux", "android"))/g' psutil/_common.py
-sed -i 's/if c_name == "linux":/if c_name in ["linux", "android"]:/g' setup.py 2>/dev/null || true
-
-# Tiến hành cài đặt thủ công từ source code đã sửa đổi
-pip install . --no-cache-dir
-
-# Dọn dẹp thư mục source code ngay sau khi hoàn tất
-cd $HOME
-rm -rf psutil
-# ==================================================================================
 
 # --- CÀI ĐẶT CÁC GÓI PYTHON CÒN LẠI ---
 echo "=== ĐANG CÀI ĐẶT CÁC THƯ VIỆN PYTHON YÊU CẦU ==="
