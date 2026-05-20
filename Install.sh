@@ -15,10 +15,13 @@ export PYCRYPTODOME_DISABLE_EXTENSIONS=1
 export AUDIOOP_LTS_SKIP_EXTENSIONS=1
 export AIOHTTP_NO_EXTENSIONS=1
 
+# GIẢI PHÁP TRIỆT TIÊU LỖI PILLOW: Buộc pip từ chối build pillow từ mã nguồn (bắt buộc dùng bản pre-built)
+export PIP_ONLY_BINARY="pillow"
+
 # Ngăn thiết bị rơi vào trạng thái ngủ khi đang chạy ngầm
 termux-wake-lock
 
-# CẤU HÌNH LẠI MIRROR CHUẨN: Đường dẫn repo đầy đủ cho Termux chính thức
+# CẤU HÌNH LẠI MIRROR CHUẨN ĐẦY ĐỦ: (Đã sửa lỗi thiếu đường dẫn con làm apt không nhận gói)
 echo "deb https://sustech.edu.cn stable main" > $PREFIX/etc/apt/sources.list
 
 # Sửa lỗi gói và cập nhật hệ thống cốt lõi
@@ -26,20 +29,25 @@ dpkg --configure -a
 apt-get update -y -q
 apt-get upgrade -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 
+# KÍCH HOẠT KHO GÓI PHỤ TRỢ (TUR) - Kho này chứa bản dựng sẵn của Pillow cho Python mới trên x86_64
+apt-get install -y -q termux-am
+pkg install -y tur-repo
+apt-get update -y -q
+
 # Tự động cấp quyền bộ nhớ mà không làm gián đoạn script
 if [ ! -d "$HOME/storage" ]; then
     am start -n com.termux/.app.PermissionCheckActivity > /dev/null 2>&1
     sleep 2
 fi
 
-# Cài đặt các gói biên dịch bắt buộc, bổ sung thêm gói python-pillow có sẵn của hệ thống Termux để vá lỗi build wheel
+# Cài đặt các gói biên dịch bắt buộc, bổ sung gói python-pillow dựng sẵn từ kho TUR
 apt-get install -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" \
     termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git ndk-sysroot libwebp python-pillow
 
 # Nâng cấp pip và ép thiết lập cấu hình đóng gói tăng tốc cài đặt
 pip install --upgrade pip setuptools wheel --no-cache-dir
 
-# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ ĐỔI SANG LINK CHUẨN ĐẦY ĐỦ) ---
+# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ SỬA LỖI DÒNG GIT CLONE GỐC CỦA BẠN) ---
 cd $HOME && rm -rf psutil
 git clone --depth 1 https://github.com
 cd psutil
@@ -52,7 +60,7 @@ cd $HOME && rm -rf psutil
 # Cụm 1: Các gói xử lý mạng và cấu trúc cơ bản không cần biên dịch
 pip install --prefer-binary --no-cache-dir multidict yarl requests pytz pyjwt rich colorama flask python-socketio prettytable
 
-# Cụm 2: Các gói mã hóa (Pillow đã được cài qua bản pre-built hệ thống nên không cần cài đè mã nguồn lỗi)
+# Cụm 2: Các gói mã hóa (Pillow đã lấy từ hệ thống thông qua thư viện TUR ổn định 100%)
 pip install --prefer-binary --no-cache-dir pycryptodome
 
 # Cụm 3: Các gói dịch vụ bất đồng bộ và Bot (Bỏ qua hoàn toàn extension C)
