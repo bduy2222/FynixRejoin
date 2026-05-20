@@ -14,21 +14,16 @@ export YARL_NO_EXTENSIONS=1
 export PYCRYPTODOME_DISABLE_EXTENSIONS=1
 export AUDIOOP_LTS_SKIP_EXTENSIONS=1
 export AIOHTTP_NO_EXTENSIONS=1
-
-# GIẢI PHÁP TRIỆT TIÊU LỖI PILLOW: Khóa không cho pip tự dịch mã nguồn C lỗi kiến trúc chéo x86_64
 export PIP_ONLY_BINARY="pillow"
 
-# Ngăn thiết bị rơi vào trạng thái ngủ khi đang chạy ngầm
 termux-wake-lock
 
-# GIẢI PHÁP SỬA LỖI MẠNG 'NOSPLIT': Xóa sạch tệp nguồn cũ cấu hình sai để khôi phục cấu hình chuẩn
+# GIẢI PHÁP SỬA LỖI MẠNG 'NOSPLIT': Xóa cấu hình mirror lỗi và tự động reset về mirror mặc định của Termux
 rm -f $PREFIX/etc/apt/sources.list
 rm -f $PREFIX/etc/apt/sources.list.d/*
+termux-reset-repo
 
-# Thiết lập Mirror chính thức của toàn cầu có CDN tự động chuyển vùng tốc độ cao, tránh bị tường lửa Cloudphone chặn
-echo "deb https://sustech.edu.cn stable main" > $PREFIX/etc/apt/sources.list
-
-# Sửa lỗi cấu hình gói cũ và cập nhật hệ thống cốt lõi
+# Đồng bộ cập nhật danh sách gói hệ thống cốt lõi ban đầu
 dpkg --configure -a
 apt-get update -y -q
 apt-get upgrade -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
@@ -44,14 +39,14 @@ if [ ! -d "$HOME/storage" ]; then
     sleep 2
 fi
 
-# Cài đặt các gói biên dịch bắt buộc, bổ sung gói python-pillow dựng sẵn từ kho TUR để không bị crash
+# Cài đặt các gói biên dịch bắt buộc, bổ sung gói python-pillow dựng sẵn từ kho TUR để không bị crash kiến trúc chéo
 apt-get install -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" \
     termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git ndk-sysroot libwebp python-pillow
 
 # Nâng cấp pip và các công cụ đóng gói nền tảng lên bản mới nhất
 pip install --upgrade pip setuptools wheel --no-cache-dir
 
-# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ SỬA LỖI DÒNG GIT CLONE GỐC) ---
+# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ SỬA LỖI DÒNG GIT CLONE CHUẨN) ---
 cd $HOME && rm -rf psutil
 git clone --depth 1 https://github.com
 cd psutil
