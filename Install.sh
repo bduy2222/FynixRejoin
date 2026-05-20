@@ -18,17 +18,17 @@ export PIP_ONLY_BINARY="pillow"
 
 termux-wake-lock
 
-# GIẢI PHÁP SỬA LỖI MẠNG 'NOSPLIT': Xóa cấu hình mirror lỗi và tự động reset về mirror mặc định của Termux
+# GIẢI PHÁP ĐẶC TRỊ LỖI 'NOSPLIT': Reset sạch cấu hình lỗi cũ và sử dụng máy chủ dự phòng toàn cầu ổn định nhất
 rm -f $PREFIX/etc/apt/sources.list
 rm -f $PREFIX/etc/apt/sources.list.d/*
-termux-reset-repo
+echo "deb https://grimler.se stable main" > $PREFIX/etc/apt/sources.list
 
-# Đồng bộ cập nhật danh sách gói hệ thống cốt lõi ban đầu
+# Đồng bộ cập nhật danh sách gói hệ thống cốt lõi ban đầu qua mạng mới
 dpkg --configure -a
 apt-get update -y -q
 apt-get upgrade -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 
-# KÍCH HOẠT KHO GÓI PHỤ TRỢ (TUR) - Kho này chứa bản dựng sẵn hoạt động 100% của Pillow cho Python mới trên x86_64
+# KÍCH HOẠT KHO GÓI PHỤ TRỢ (TUR) - Kho chứa bản dựng sẵn của Pillow cho Python mới trên x86_64
 apt-get install -y -q termux-am
 apt-get install -y -q tur-repo
 apt-get update -y -q
@@ -39,14 +39,14 @@ if [ ! -d "$HOME/storage" ]; then
     sleep 2
 fi
 
-# Cài đặt các gói biên dịch bắt buộc, bổ sung gói python-pillow dựng sẵn từ kho TUR để không bị crash kiến trúc chéo
+# Cài đặt các gói biên dịch bắt buộc, bổ sung gói python-pillow dựng sẵn không lo sập hệ thống
 apt-get install -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef" \
     termux-tools python clang make libffi openssl libjpeg-turbo libpng zlib freetype git ndk-sysroot libwebp python-pillow
 
 # Nâng cấp pip và các công cụ đóng gói nền tảng lên bản mới nhất
 pip install --upgrade pip setuptools wheel --no-cache-dir
 
-# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ SỬA LỖI DÒNG GIT CLONE CHUẨN) ---
+# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ SỬA CHUẨN ĐƯỜNG LINK GIT CLONE) ---
 cd $HOME && rm -rf psutil
 git clone --depth 1 https://github.com
 cd psutil
