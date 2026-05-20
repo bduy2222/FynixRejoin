@@ -1,6 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-# Cấu hình môi trường không tương tác để tự động hóa 100%
+# Cấu hình môi trường không tương tác để tự động hóa hoàn toàn, tự động đồng ý mọi thiết lập
 export DEBIAN_FRONTEND=noninteractive
 export FORCE_UNSAFE_CONFIGURE=1
 
@@ -18,18 +18,35 @@ export PIP_ONLY_BINARY="pillow"
 
 termux-wake-lock
 
-# ĐẶC TRỊ MẤT FILE HỆ THỐNG: Tạo lại cấu hình thư mục mặc định và ép cấu hình máy chủ chuẩn CDN toàn cầu
+# ==================== TỰ ĐỘNG KHÔI PHỤC & CHỌN REPO THÔNG MẠNG ====================
+echo "=== ĐANG TỰ ĐỘNG KHẢO SÁT VÀ KHÔI PHỤC KHO GÓI TERMUX ==="
 mkdir -p $PREFIX/etc/apt/sources.list.d
-echo "deb https://grimler.se stable main" > $PREFIX/etc/apt/sources.list
 
-# Đảm bảo gỡ lỗi cấu hình gói cũ nếu có và đồng bộ cập nhật lại danh sách gói
+# Thử nghiệm lần lượt các Mirror lớn nhất, tự động dừng lại khi tìm thấy mạng chạy được
+MIRRORS=(
+    "https://sustech.edu.cn"
+    "https://tsinghua.edu.cn"
+    "https://grimler.se"
+    "https://workers.dev"
+)
+
+for mirror in "${MIRRORS[@]}"; do
+    echo "deb $mirror stable main" > $PREFIX/etc/apt/sources.list
+    echo "Đang thử nghiệm kết nối tới: $mirror"
+    if apt-get update -y -q; then
+        echo "==> KHỚP MẠNG THÀNH CÔNG VỚI REPO: $mirror"
+        break
+    fi
+done
+# ==================================================================================
+
+# Đảm bảo gỡ lỗi cấu hình gói cũ nếu có và đồng bộ nâng cấp hệ thống cốt lõi
 dpkg --configure -a
-apt-get update -y -q
 apt-get upgrade -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="--force-confdef"
 
-# KÍCH HOẠT KHO GÓI PHỤ TRỢ (TUR) - Kho chứa bản dựng sẵn của Pillow cho Python mới trên x86_64
+# TỰ ĐỘNG CÀI KHO GÓI PHỤ TRỢ (TUR) - Chứa bản dựng sẵn hoạt động 100% của Pillow cho x86_64
 apt-get install -y -q termux-am
-apt-get install -y -q tur-repo
+apt-get install -y -q tur-repo || pkg install -y tur-repo
 apt-get update -y -q
 
 # Tự động cấp quyền bộ nhớ mà không làm gián đoạn script
@@ -45,7 +62,7 @@ apt-get install -y -q -o Dpkg::Options::="--force-confold" -o Dpkg::Options::="-
 # Nâng cấp pip và các công cụ đóng gói nền tảng lên bản mới nhất
 pip install --upgrade pip setuptools wheel --no-cache-dir
 
-# --- Build & cài đặt psutil tối ưu cho Android (ĐA VÁ CHUẨN ĐƯỜNG LINK GIT CLONE GỐC CỦA BẠN) ---
+# --- Build & cài đặt psutil tối ưu cho Android (ĐÃ ĐIỀN ĐƯỜNG LINK GIT CHUẨN ĐẦY ĐỦ CỦA BẠN) ---
 cd $HOME && rm -rf psutil
 git clone --depth 1 https://github.com
 cd psutil
@@ -68,4 +85,4 @@ pip install --prefer-binary --no-cache-dir audioop-lts aiohttp discord.py
 apt-get clean
 rm -rf ~/.cache/pip
 
-echo "=== ĐÃ SỬA TOÀN BỘ LỖI & CÀI ĐẶT THÀNH CÔNG ==="
+echo "=== ĐÃ TỰ ĐỘNG FIX TẤT CẢ LỖI & CÀI ĐẶT THÀNH CÔNG ==="
