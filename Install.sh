@@ -85,5 +85,27 @@ pip install --prefer-binary --no-cache-dir audioop-lts aiohttp discord.py
 # DỌN DẸP HỆ THỐNG: Giải phóng dung lượng lưu trữ
 apt-get clean
 rm -rf ~/.cache/pip
+# ==================== DOWNLOAD FYNIX REJOIN ====================
+echo "=== ĐANG TẢI FYNIX REJOIN ==="
 
+mkdir -p "$HOME/FynixRejoin"
+
+DOWNLOAD_URL="https://raw.githubusercontent.com/bduy2222/FynixRejoin/refs/heads/main/obf-bduyrj.py"
+OUTPUT_FILE="$HOME/FynixRejoin/obf-bduyrj.py"
+
+if command -v curl >/dev/null 2>&1; then
+    curl -L --retry 5 --retry-delay 3 \
+        "$DOWNLOAD_URL" \
+        -o "$OUTPUT_FILE"
+else
+    wget -O "$OUTPUT_FILE" "$DOWNLOAD_URL"
+fi
+
+if [ -f "$OUTPUT_FILE" ] && [ -s "$OUTPUT_FILE" ]; then
+    chmod 777 "$OUTPUT_FILE"
+    echo "[OK] Downloaded: $OUTPUT_FILE"
+else
+    echo "[ERROR] Download failed"
+fi
+# ==============================================================
 echo "=== XỬ LÝ HOÀN TẤT & CÀI ĐẶT THÀNH CÔNG HOÀN TOÀN 100% ==="
