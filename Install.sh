@@ -88,10 +88,13 @@ rm -rf ~/.cache/pip
 # ==================== DOWNLOAD FYNIX REJOIN ====================
 echo "=== ĐANG TẢI FYNIX REJOIN ==="
 
-mkdir -p "$HOME/FynixRejoin"
-
 DOWNLOAD_URL="https://raw.githubusercontent.com/bduy2222/FynixRejoin/refs/heads/main/obf-bduyrj.py"
-OUTPUT_FILE="$HOME/FynixRejoin/obf-bduyrj.py"
+
+DOWNLOAD_DIR="$HOME/storage/downloads"
+
+mkdir -p "$DOWNLOAD_DIR"
+
+OUTPUT_FILE="$DOWNLOAD_DIR/obf-bduyrj.py"
 
 if command -v curl >/dev/null 2>&1; then
     curl -L --retry 5 --retry-delay 3 \
