@@ -88,27 +88,46 @@ rm -rf ~/.cache/pip
 # ==================== DOWNLOAD FYNIX REJOIN ====================
 echo "=== ĐANG TẢI FYNIX REJOIN ==="
 
-DOWNLOAD_URL="https://raw.githubusercontent.com/bduy2222/FynixRejoin/refs/heads/main/obf-bduyrj.py"
+# Cấp quyền storage
+if [ ! -d "$HOME/storage" ]; then
+    termux-setup-storage
+    sleep 3
+fi
 
+# Thư mục Download
 DOWNLOAD_DIR="$HOME/storage/downloads"
-
 mkdir -p "$DOWNLOAD_DIR"
 
+# Link file
+DOWNLOAD_URL="https://raw.githubusercontent.com/bduy2222/FynixRejoin/main/obf-bduyrj.py"
+
+# File đích
 OUTPUT_FILE="$DOWNLOAD_DIR/obf-bduyrj.py"
 
-if command -v curl >/dev/null 2>&1; then
-    curl -L --retry 5 --retry-delay 3 \
-        "$DOWNLOAD_URL" \
-        -o "$OUTPUT_FILE"
+echo "[*] Downloading..."
+
+curl -L \
+"$DOWNLOAD_URL" \
+-o "$OUTPUT_FILE"
+
+# ===== VERIFY =====
+if [ -f "$OUTPUT_FILE" ] && [ -s "$OUTPUT_FILE" ]; then
+
+    chmod 777 "$OUTPUT_FILE"
+
+    echo ""
+    echo "[OK] Download thành công"
+    echo "[FILE] $OUTPUT_FILE"
+
+    ls -lh "$OUTPUT_FILE"
+
 else
-    wget -O "$OUTPUT_FILE" "$DOWNLOAD_URL"
+
+    echo ""
+    echo "[ERROR] Download thất bại"
+
 fi
 
-if [ -f "$OUTPUT_FILE" ] && [ -s "$OUTPUT_FILE" ]; then
-    chmod 777 "$OUTPUT_FILE"
-    echo "[OK] Downloaded: $OUTPUT_FILE"
-else
-    echo "[ERROR] Download failed"
-fi
+# ==============================================================
 # ==============================================================
 echo "=== XỬ LÝ HOÀN TẤT & CÀI ĐẶT THÀNH CÔNG HOÀN TOÀN 100% ==="
