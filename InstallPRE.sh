@@ -1,47 +1,51 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-set -e
+echo "=========================================="
+echo "   FYNIX INSTALLER - ROBUST VERSION"
+echo "=========================================="
 
-echo "======================================"
-echo "    FYNIX SETUP (TIME-FIXED VERSION)"
-echo "======================================"
-
-# 1. Bỏ qua kiểm tra thời gian của apt để fix lỗi "not valid yet"
-echo "[*] Fixing time validation error..."
+# 1. Tự động tạo cấu hình vượt lỗi thời gian (APT FIX)
+echo "[*] Applying APT time-sync bypass..."
 mkdir -p "$PREFIX/etc/apt/apt.conf.d"
-echo 'Acquire::Check-Valid-Until "false";' > "$PREFIX/etc/apt/apt.conf.d/99no-check-valid"
+cat > "$PREFIX/etc/apt/apt.conf.d/99no-check-valid" << EOF
+Acquire::Check-Valid-Until "false";
+Acquire::AllowInsecureRepositories "true";
+EOF
 
-# 2. Update Repo
-echo "[*] Updating repositories..."
-pkg update -y && pkg upgrade -y
+# 2. Dọn dẹp cache cũ và cập nhật
+echo "[*] Cleaning cache and updating..."
+rm -rf "$PREFIX/var/lib/apt/lists/*"
+pkg update -y || { echo "[ERROR] Update failed, check network."; exit 1; }
 
 # 3. Cài đặt các gói cốt lõi
-echo "[*] Installing core packages..."
+echo "[*] Installing core dependencies..."
 pkg install -y python git curl wget clang make openssl libffi zlib termux-tools tsu
 
-# 4. Cấu hình pip và cài thư viện Python
-echo "[*] Configuring Python..."
+# 4. Cấu hình Python Pip
+echo "[*] Configuring Python pip..."
 python -m ensurepip --upgrade
 python -m pip install --upgrade pip setuptools wheel
 
-echo "[*] Installing dependencies..."
+# 5. Cài đặt thư viện Python cần thiết
+echo "[*] Installing Python libraries..."
 python -m pip install --no-cache-dir requests rich colorama
 
-# 5. Tải tool
+# 6. Tải Tool
+echo "[*] Downloading Fynix Tool..."
 DOWNLOAD_DIR="$HOME/storage/downloads"
 mkdir -p "$DOWNLOAD_DIR"
-DOWNLOAD_URL="https://raw.githubusercontent.com/bduy2222/FynixRejoin/main/obf-bduyrjpremium.py"
 OUTPUT_FILE="$DOWNLOAD_DIR/obf-bduyrjpremium.py"
 
-echo "[*] Downloading Fynix Tool..."
-curl -L --retry 5 "$DOWNLOAD_URL" -o "$OUTPUT_FILE"
+curl -L -o "$OUTPUT_FILE" https://raw.githubusercontent.com/bduy2222/FynixRejoin/main/obf-bduyrjpremium.py
 
-# 6. Phân quyền
-chmod +x "$OUTPUT_FILE"
-
-echo ""
-echo "======================================"
-echo "      INSTALL COMPLETED SUCCESSFULLY"
-echo "======================================"
-echo "Chạy tool bằng lệnh:"
-echo "python $OUTPUT_FILE"
+if [ -f "$OUTPUT_FILE" ]; then
+    chmod +x "$OUTPUT_FILE"
+    echo ""
+    echo "=========================================="
+    echo "      INSTALLATION COMPLETED!"
+    echo "=========================================="
+    echo "Để chạy tool, sử dụng lệnh:"
+    echo "python $OUTPUT_FILE"
+else
+    echo "[ERROR] Download failed. Please check your internet connection."
+fi
