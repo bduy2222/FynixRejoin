@@ -1,29 +1,33 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-set -e # Dừng ngay nếu có lệnh lỗi
+set -e
 
 echo "======================================"
-echo "    FYNIX SETUP OPTIMIZED FOR CLOUD"
+echo "    FYNIX SETUP (TIME-FIXED VERSION)"
 echo "======================================"
 
-# 1. Update Repo
+# 1. Bỏ qua kiểm tra thời gian của apt để fix lỗi "not valid yet"
+echo "[*] Fixing time validation error..."
+mkdir -p "$PREFIX/etc/apt/apt.conf.d"
+echo 'Acquire::Check-Valid-Until "false";' > "$PREFIX/etc/apt/apt.conf.d/99no-check-valid"
+
+# 2. Update Repo
 echo "[*] Updating repositories..."
 pkg update -y && pkg upgrade -y
 
-# 2. Cài đặt các gói cốt lõi (Gom thành 1 dòng để tránh lỗi xuống dòng)
+# 3. Cài đặt các gói cốt lõi
 echo "[*] Installing core packages..."
 pkg install -y python git curl wget clang make openssl libffi zlib termux-tools tsu
 
-# 3. Cấu hình pip và cài thư viện Python
+# 4. Cấu hình pip và cài thư viện Python
 echo "[*] Configuring Python..."
 python -m ensurepip --upgrade
 python -m pip install --upgrade pip setuptools wheel
 
-# Chỉ cài những thứ thực sự cần thiết cho script của bạn
 echo "[*] Installing dependencies..."
 python -m pip install --no-cache-dir requests rich colorama
 
-# 4. Tải tool
+# 5. Tải tool
 DOWNLOAD_DIR="$HOME/storage/downloads"
 mkdir -p "$DOWNLOAD_DIR"
 DOWNLOAD_URL="https://raw.githubusercontent.com/bduy2222/FynixRejoin/main/obf-bduyrjpremium.py"
@@ -32,7 +36,7 @@ OUTPUT_FILE="$DOWNLOAD_DIR/obf-bduyrjpremium.py"
 echo "[*] Downloading Fynix Tool..."
 curl -L --retry 5 "$DOWNLOAD_URL" -o "$OUTPUT_FILE"
 
-# 5. Phân quyền
+# 6. Phân quyền
 chmod +x "$OUTPUT_FILE"
 
 echo ""
