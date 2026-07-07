@@ -1,48 +1,48 @@
 #!/bin/bash
 
-# --- CẤU HÌNH TỐC ĐỘ CAO ---
+# --- CẤU HÌNH CƯỠNG BỨC KHÔNG PROMPT ---
 export DEBIAN_FRONTEND=noninteractive
 APT_OPTIONS="-y -o Dpkg::Options::='--force-confnew' -o Dpkg::Options::='--force-confdef'"
 
-# TỰ ĐỘNG CHỌN MIRROR NHANH NHẤT (Cực kỳ quan trọng)
-echo -e "\033[36m[!] Đang tối ưu hóa đường truyền...\033[0m"
-# Lệnh này sẽ tự động chọn mirror gần nhất, không lấy ZJU nữa
+# --- BẢNG MÀU ANSI DỊU MẮT ---
+C_RESET="\033[0m"
+C_GREEN="\033[32;1m"
+C_CYAN="\033[36;1m"
+C_YELLOW="\033[33;1m"
+
+clear
+echo -e "${C_CYAN}═════════════════════════════════════════════════${C_RESET}"
+echo -e "${C_GREEN}        FYNIX REJOIN PREMIUM - SUPER SPEED SETUP  ${C_RESET}"
+echo -e "${C_CYAN}═════════════════════════════════════════════════${C_RESET}\n"
+
+# ===== BƯỚC 1: ĐỔI MIRROR CHỐNG NGHẼN =====
+echo -e "${C_CYAN}[1/4] Đang tối ưu hóa Mirror chống nghẽn mạng...${C_RESET}"
 termux-change-repo <<EOF
 1
 1
 EOF
 
-# Cập nhật lại list sau khi đổi mirror
+# ===== BƯỚC 2: CẬP NHẬT LIST KHÔNG UPGRADE GÓI CŨ =====
+# Chỉ update list để tải gói mới, KHÔNG upgrade toàn bộ hệ thống (tránh kéo theo llvm)
 apt update -y
-# --- BẢNG MÀU ---
-GREEN="\e[32;1m"
-CYAN="\e[36;1m"
-RESET="\e[0m"
 
-clear
-echo -e "${CYAN}=================================================${RESET}"
-echo -e "${GREEN}      FYNIX REJOIN PREMIUM - FORCED SETUP       ${RESET}"
-echo -e "${CYAN}=================================================${RESET}\n"
+# ===== BƯỚC 3: CÀI PYTHON GỌN NHẸ (BỎ CLANG/LLVM) =====
+echo -e "\n${C_CYAN}[2/4] Cài đặt Python và thư viện đồ họa cốt lõi...${C_RESET}"
+# ĐÃ XÓA: clang, make, binutils (Giảm từ 664MB xuống còn mười mấy MB!)
+apt install python python-pip libjpeg-turbo libpng $APT_OPTIONS
 
-# 1. Cập nhật hệ thống với các tùy chọn ép buộc
-echo -e "${CYAN}[1/4] Cập nhật hệ thống (Cấu hình cưỡng bức)...${RESET}"
-apt update -y
-apt upgrade $APT_OPTIONS
+# ===== BƯỚC 4: CÀI THƯ VIỆN PYTHON TỐC ĐỘ CAO =====
+echo -e "\n${C_CYAN}[3/4] Cài đặt các Module Python (Tăng tốc tăng tiến)...${C_RESET}"
+python -m pip install --upgrade pip
 
-# 2. Cài đặt các gói cần thiết
-echo -e "\n${CYAN}[2/4] Cài đặt dependencies...${RESET}"
-apt install python python-pip clang make binutils libjpeg-turbo libpng $APT_OPTIONS
+# Sử dụng Mirror của PyPI tại Châu Á (tsinghua) để kéo thư viện với tốc độ tối đa
+pip install psutil requests aiohttp colorama Pillow nest_asyncio --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-# 3. Cài thư viện Python
-echo -e "\n${CYAN}[3/4] Cài đặt thư viện Python...${RESET}"
-pip install --upgrade pip
-pip install psutil requests aiohttp colorama Pillow nest_asyncio --no-cache-dir
-
-# 4. Cấp quyền
-echo -e "\n${CYAN}[4/4] Cấu hình bộ nhớ...${RESET}"
+# ===== BƯỚC 5: CẤP QUYỀN BỘ NHỚ =====
+echo -e "\n${C_CYAN}[4/4] Kích hoạt cấu hình lưu trữ thiết bị...${C_RESET}"
 termux-setup-storage
 
-echo -e "\n${GREEN}=================================================${RESET}"
-echo -e "${GREEN}           CÀI ĐẶT HOÀN TẤT THÀNH CÔNG!          ${RESET}"
-echo -e "${GREEN}=================================================${RESET}"
-echo -e "${CYAN}Khởi chạy: ${RESET}python bduyrjpremium.py\n"
+echo -e "\n${C_GREEN}═════════════════════════════════════════════════${C_RESET}"
+echo -e "${C_GREEN}          CÀI ĐẶT HOÀN TẤT VỚI TỐC ĐỘ TỐI ƯU!    ${C_RESET}"
+echo -e "${C_GREEN}═════════════════════════════════════════════════${C_RESET}"
+echo -e "${C_CYAN}• Khởi chạy Tool ngay:${C_RESET} ${C_YELLOW}python bduyrjpremium.py${C_RESET}\n"
