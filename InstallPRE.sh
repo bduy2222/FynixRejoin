@@ -1,11 +1,19 @@
 #!/bin/bash
 
-# Thiết lập biến môi trường để ép không hiển thị prompt
+# --- CẤU HÌNH TỐC ĐỘ CAO ---
 export DEBIAN_FRONTEND=noninteractive
-
-# Các option để tự động chọn 'I' (Install maintainer version) và không hỏi gì cả
 APT_OPTIONS="-y -o Dpkg::Options::='--force-confnew' -o Dpkg::Options::='--force-confdef'"
 
+# TỰ ĐỘNG CHỌN MIRROR NHANH NHẤT (Cực kỳ quan trọng)
+echo -e "\033[36m[!] Đang tối ưu hóa đường truyền...\033[0m"
+# Lệnh này sẽ tự động chọn mirror gần nhất, không lấy ZJU nữa
+termux-change-repo <<EOF
+1
+1
+EOF
+
+# Cập nhật lại list sau khi đổi mirror
+apt update -y
 # --- BẢNG MÀU ---
 GREEN="\e[32;1m"
 CYAN="\e[36;1m"
