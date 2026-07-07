@@ -1,33 +1,48 @@
 #!/bin/bash
 
-# Bảng màu cho đẹp và chuyên nghiệp
+# --- BẢNG MÀU ---
 GREEN="\e[32;1m"
 CYAN="\e[36;1m"
+YELLOW="\e[33;1m"
 RED="\e[31;1m"
 RESET="\e[0m"
 
 clear
 echo -e "${CYAN}=================================================${RESET}"
-echo -e "${GREEN}      FYNIX REJOIN PREMIUM - SETUP ENVIRONMENT    ${RESET}"
+echo -e "${GREEN}      FYNIX REJOIN PREMIUM - AUTO SETUP         ${RESET}"
 echo -e "${CYAN}=================================================${RESET}\n"
 
-echo -e "${CYAN}[1/4] Cập nhật hệ thống Termux...${RESET}"
+# 1. TỰ ĐỘNG ĐỔI MIRROR REPO (Tăng tốc tải gói)
+echo -e "${CYAN}[1/5] Đang tối ưu hóa Repository (Mirror)...${RESET}"
+termux-change-repo <<EOF
+1
+1
+EOF
+
+# 2. CẬP NHẬT HỆ THỐNG
+echo -e "\n${CYAN}[2/5] Cập nhật hệ thống...${RESET}"
 pkg update -y && pkg upgrade -y
 
-echo -e "\n${CYAN}[2/4] Cài đặt Python và các trình biên dịch cần thiết...${RESET}"
-# Cài đặt Python, trình biên dịch C (clang, make) và thư viện ảnh cho Pillow, psutil
+# 3. CÀI ĐẶT CÁC GÓI CẦN THIẾT
+echo -e "\n${CYAN}[3/5] Cài đặt trình biên dịch và Python...${RESET}"
 pkg install python python-pip clang make binutils libjpeg-turbo libpng -y
 
-echo -e "\n${CYAN}[3/4] Cài đặt các thư viện Python...${RESET}"
-# Nâng cấp pip lên bản mới nhất trước khi cài
-pip install --upgrade pip
+# 4. CÀI THƯ VIỆN VỚI TỐC ĐỘ CAO (Dùng --no-cache-dir để tránh lỗi vặt)
+echo -e "\n${CYAN}[4/5] Cài đặt các thư viện Python (Đang tăng tốc)...${RESET}"
+python -m pip install --upgrade pip
+pip install psutil requests aiohttp colorama Pillow nest_asyncio --no-cache-dir
 
-# Cài đặt các thư viện cốt lõi của tool
-pip install psutil requests aiohttp colorama Pillow nest_asyncio
+# 5. TỰ ĐỘNG CẤP QUYỀN LƯU TRỮ
+echo -e "\n${CYAN}[5/5] Cấu hình bộ nhớ...${RESET}"
+# Dùng lệnh giả lập nhấn Enter hoặc cài sẵn quyền
+if [ ! -d "$HOME/storage" ]; then
+    echo -e "${YELLOW}Đang kích hoạt quyền truy cập bộ nhớ...${RESET}"
+    termux-setup-storage
+    # Script không thể tự bấm nút 'Allow' thay người dùng được (do bảo mật Android)
+    # Nhưng lệnh này sẽ kích hoạt bảng prompt ngay lập tức cho người dùng
+fi
 
-echo -e "\n${CYAN}[4/4] Cấp quyền truy cập bộ nhớ cho Termux...${RESET}"
-echo -e "${RED}(Lưu ý: Hãy nhấn CHO PHÉP / ALLOW khi bảng thông báo hiện lên nhé!)${RESET}"
-termux-setup-storage
-
-echo -e "\n${GREEN}[✓] QUÁ TRÌNH CÀI ĐẶT HOÀN TẤT!${RESET}"
-echo -e "${CYAN}Bây giờ bạn có thể chạy tool bằng lệnh:${RESET} python bduyrjpremium.py\n"
+echo -e "\n${GREEN}=================================================${RESET}"
+echo -e "${GREEN}           CÀI ĐẶT HOÀN TẤT THÀNH CÔNG!          ${RESET}"
+echo -e "${GREEN}=================================================${RESET}"
+echo -e "${CYAN}Khởi chạy tool: ${RESET}python bduyrjpremium.py\n"
