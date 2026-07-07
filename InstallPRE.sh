@@ -11,7 +11,7 @@ C_YELLOW="\033[33;1m"
 
 clear
 echo -e "${C_CYAN}═════════════════════════════════════════════════${C_RESET}"
-echo -e "${C_GREEN}        FYNIX REJOIN PREMIUM - FIX PSUTIL ERROR   ${C_RESET}"
+echo -e "${C_GREEN}        FYNIX REJOIN PREMIUM - ADD DISCORD MODULE ${C_RESET}"
 echo -e "${C_CYAN}═════════════════════════════════════════════════${C_RESET}\n"
 
 # ===== BƯỚC 1: ĐỔI MIRROR CHỐNG NGHẼN =====
@@ -36,8 +36,8 @@ fi
 
 # ===== BƯỚC 3: CÀI ĐẶT CÁC THƯ VIỆN PYTHON CÒN LẠI =====
 echo -e "\n${C_CYAN}[3/4] Cài đặt các Module Python còn lại...${C_RESET}"
-# BỎ QUA lệnh upgrade pip vì Termux cấm, cài thẳng các lib còn lại (đã bỏ psutil khỏi pip)
-pip install requests aiohttp colorama Pillow nest_asyncio --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple
+# Đã thêm 'discord' hoặc 'discord.py' vào chuỗi cài đặt qua pip tốc độ cao
+pip install requests aiohttp colorama Pillow nest_asyncio discord.py --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # ===== BƯỚC 4: TỰ ĐỘNG KHỞI TẠO BỘ NHỚ =====
 echo -e "\n${C_CYAN}[4/4] Kích hoạt cấu hình lưu trữ thiết bị...${C_RESET}"
