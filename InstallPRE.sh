@@ -12,35 +12,26 @@ echo -e "${CYAN}=================================================${RESET}"
 echo -e "${GREEN}      FYNIX REJOIN PREMIUM - AUTO SETUP         ${RESET}"
 echo -e "${CYAN}=================================================${RESET}\n"
 
-# 1. TỰ ĐỘNG ĐỔI MIRROR REPO (Tăng tốc tải gói)
-echo -e "${CYAN}[1/5] Đang tối ưu hóa Repository (Mirror)...${RESET}"
-termux-change-repo <<EOF
-1
-1
-EOF
+# 1. TỰ ĐỘNG CẬP NHẬT VÀ GHI ĐÈ CẤU HÌNH (Bỏ qua prompt sources.list)
+echo -e "${CYAN}[1/4] Đang cập nhật hệ thống (Tự động xác nhận)...${RESET}"
+# -y: tự động đồng ý
+# -o Dpkg::Options...: tự động chọn cấu hình mới nhất mà không hỏi lại
+pkg update -y
+pkg upgrade -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef"
 
-# 2. CẬP NHẬT HỆ THỐNG
-echo -e "\n${CYAN}[2/5] Cập nhật hệ thống...${RESET}"
-pkg update -y && pkg upgrade -y
-
-# 3. CÀI ĐẶT CÁC GÓI CẦN THIẾT
-echo -e "\n${CYAN}[3/5] Cài đặt trình biên dịch và Python...${RESET}"
+# 2. CÀI ĐẶT CÁC GÓI CẦN THIẾT
+echo -e "\n${CYAN}[2/4] Cài đặt trình biên dịch và Python...${RESET}"
 pkg install python python-pip clang make binutils libjpeg-turbo libpng -y
 
-# 4. CÀI THƯ VIỆN VỚI TỐC ĐỘ CAO (Dùng --no-cache-dir để tránh lỗi vặt)
-echo -e "\n${CYAN}[4/5] Cài đặt các thư viện Python (Đang tăng tốc)...${RESET}"
+# 3. CÀI THƯ VIỆN PYTHON (Tối ưu tốc độ)
+echo -e "\n${CYAN}[3/4] Cài đặt thư viện Python...${RESET}"
 python -m pip install --upgrade pip
 pip install psutil requests aiohttp colorama Pillow nest_asyncio --no-cache-dir
 
-# 5. TỰ ĐỘNG CẤP QUYỀN LƯU TRỮ
-echo -e "\n${CYAN}[5/5] Cấu hình bộ nhớ...${RESET}"
-# Dùng lệnh giả lập nhấn Enter hoặc cài sẵn quyền
-if [ ! -d "$HOME/storage" ]; then
-    echo -e "${YELLOW}Đang kích hoạt quyền truy cập bộ nhớ...${RESET}"
-    termux-setup-storage
-    # Script không thể tự bấm nút 'Allow' thay người dùng được (do bảo mật Android)
-    # Nhưng lệnh này sẽ kích hoạt bảng prompt ngay lập tức cho người dùng
-fi
+# 4. CẤP QUYỀN LƯU TRỮ
+echo -e "\n${CYAN}[4/4] Cấu hình bộ nhớ...${RESET}"
+# Lệnh này sẽ yêu cầu người dùng nhấn 'Allow' 1 lần duy nhất từ hệ thống Android
+termux-setup-storage
 
 echo -e "\n${GREEN}=================================================${RESET}"
 echo -e "${GREEN}           CÀI ĐẶT HOÀN TẤT THÀNH CÔNG!          ${RESET}"
