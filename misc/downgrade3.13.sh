@@ -4,24 +4,30 @@ echo "[*] 1. Đang gỡ bỏ phiên bản Python cũ để tránh xung đột...
 pkg uninstall python python-dev python3 -y
 
 echo "[*] 2. Tạo và di chuyển vào thư mục tạm thời..."
+# Xóa thư mục cũ nếu có để đảm bảo môi trường sạch 100%
+rm -rf $HOME/tmp_python
 mkdir -p $HOME/tmp_python && cd $HOME/tmp_python
 
-echo "[*] 3. Tải trực tiếp gói Python 3.13 chính thức từ kho TUR GitHub..."
-# Sử dụng cờ -o để ép định dạng tên file đầu ra, tránh lỗi No such file or directory
-curl -L "https://github.com" -o python3.13_3.13.1_aarch64.deb
+echo "[*] 3. Tải trực tiếp gói Python 3.13 từ kho TUR GitHub..."
+# Sử dụng cờ -o viết thường để ép tên file cố định ngay từ đầu
+curl -sL "https://github.com" -o python3.13_3.13.1_aarch64.deb
 
-echo "[*] 4. Tiến hành cài đặt file .deb bằng trình quản lý dpkg..."
+echo "[*] 4. Tiến hành cài đặt file bằng trình quản lý dpkg..."
+# Mẹo thông minh: Nếu curl đổi tên thành curl_response, lệnh này vẫn cài được
 if [ -f "python3.13_3.13.1_aarch64.deb" ]; then
     dpkg -i python3.13_3.13.1_aarch64.deb
-    # Tự động nạp cấu hình và sửa lỗi nếu thiếu các thư viện hệ thống đi kèm
-    apt install -f -y
+elif [ -f "curl_response" ]; then
+    echo "[!] Phát hiện curl tự đổi tên file, đang tiến hành ép cài đặt..."
+    dpkg -i curl_response
 else
-    echo "[-] LỖI: Không tìm thấy file cài đặt đã tải. Thử dùng wget..."
+    echo "[-] Không tìm thấy file tải về bằng curl, đang thử tải lại bằng wget..."
     pkg install wget -y
-    wget "https://github.com"
-    dpkg -i python3.13_3.13.1_aarch64.deb
-    apt install -f -y
+    wget -q "https://github.com" -O python_setup.deb
+    dpkg -i python_setup.deb
 fi
+
+# Tự động nạp cấu hình sửa lỗi nếu thiếu thư viện hệ thống
+apt install -f -y
 
 echo "[*] 5. Đang cấu hình liên kết hệ thống cho lệnh 'python'..."
 if [ -f "$PREFIX/bin/python3.13" ]; then
