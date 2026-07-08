@@ -1,37 +1,36 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-echo "[*] 1. Xóa bỏ cấu hình kho lưu trữ cũ bị lỗi..."
-rm -f $PREFIX/etc/apt/sources.list.d/*
+echo "[*] 1. Xóa triệt để các kho lưu trữ phụ bị lỗi (Gây lỗi NOSPLIT)..."
+# Lệnh này sẽ dọn sạch file cấu hình chứa liên kết gãy từ workers.dev
+rm -rf $PREFIX/etc/apt/sources.list.d/*
 
-echo "[*] 2. Ép buộc đặt lại danh sách máy chủ chính thức (Cloudflare)..."
+echo "[*] 2. Ép cấu hình kho chính về máy chủ chính thức ổn định..."
 echo "deb https://cloudflare.com stable main" > $PREFIX/etc/apt/sources.list
 
-echo "[*] 3. Sửa lỗi chữ ký bảo mật và cập nhật khóa (Fix Keyring)..."
-# Tải và cài đặt trực tiếp file keyring chính thức để sửa lỗi "not signed"
-pkg install termux-keyring -y --force-yes
-
-echo "[*] 4. Đang làm sạch bộ nhớ đệm APT..."
+echo "[*] 3. Xóa bộ nhớ đệm APT cũ để nạp cấu hình mới..."
 apt clean
+
+echo "[*] 4. Đồng bộ danh sách gói hệ thống..."
 apt update -y
 
-echo "[*] 5. Đang cài đặt kho lưu trữ phụ (TUR) mới..."
-pkg install tur-repo -y
+echo "[*] 5. Cài đặt lại kho lưu trữ phụ (TUR) bản mới ổn định..."
+apt install tur-repo -y
 
-echo "[*] 6. Đang cập nhật danh sách gói tổng hợp..."
+echo "[*] 6. Đọc danh sách gói từ kho TUR vừa thêm..."
 apt update -y
 
-echo "[*] 7. Tiến hành cài đặt Python 3.13..."
+echo "[*] 7. Tiến hành gỡ cài đặt Python cũ và hạ cấp xuống Python 3.13..."
 pkg uninstall python python-dev python3 -y
 apt install python3.13 -y
 
-# Kiểm tra cuối cùng và tạo liên kết chạy lệnh
+# Bước kiểm tra cuối cùng và tạo liên kết chạy lệnh
 if [ -f "$PREFIX/bin/python3.13" ]; then
-    echo "[*] Thiết lập phím tắt lệnh 'python'..."
+    echo "[*] Cấu hình phím tắt cho lệnh 'python'..."
     ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python
     ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python3
     
-    echo "[+] HOÀN TẤT THÀNH CÔNG! Phiên bản hiện tại:"
+    echo "[+] CHÚC MỪNG! ĐÃ HẠ CẤP THÀNH CÔNG PYTHON 3.13!"
     python --version
 else
-    echo "[-] Lỗi cài đặt. Vui lòng bảo member gõ lệnh: 'termux-change-repo' ngoài màn hình, chọn 'Mirror by Cloudflare' rồi chạy lại script."
+    echo "[-] Lỗi cài đặt thất bại. Vui lòng bảo member tắt hoàn toàn Termux mở lại rồi chạy lại lệnh."
 fi
