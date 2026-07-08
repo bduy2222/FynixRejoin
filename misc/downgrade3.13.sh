@@ -8,7 +8,7 @@ rm -rf $HOME/tmp_python
 mkdir -p $HOME/tmp_python && cd $HOME/tmp_python
 
 echo "[*] 3. Tải trực tiếp gói Python 3.13 từ máy chủ lưu trữ Termux..."
-# Đổi sang link gốc của Termux để tải đủ file 13MB, tránh file lỗi 563KB trên GitHub
+# ĐÂY LÀ LINK GỐC CHUẨN ĐỂ TẢI ĐỦ FILE 13MB
 curl -sL "https://termux.dev" -o python3.13_aarch64.deb
 
 echo "[*] 4. Tiến hành cài đặt file bằng trình quản lý dpkg..."
@@ -32,3 +32,4 @@ fi
 echo "[*] 6. Dọn dẹp các tệp tin cài đặt tạm..."
 cd $HOME
 rm -rf $HOME/tmp_python
+
