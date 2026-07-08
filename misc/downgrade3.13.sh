@@ -1,19 +1,28 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-echo "[*] Đang xóa phiên bản Python cũ..."
-pkg uninstall python python-dev -y
+echo "[*] Đang gỡ bỏ phiên bản Python lỗi tương thích..."
+pkg uninstall python python-dev python3 -y
 
-echo "[*] Đang cập nhật hệ thống Termux..."
-pkg update -y && pkg upgrade -y
+echo "[*] Đang cập nhật danh sách gói hệ thống..."
+pkg update -y
 
-echo "[*] Đang cài đặt kho lưu trữ phụ (TUR)..."
+echo "[*] Đang thiết lập kho lưu trữ phụ (TUR)..."
 pkg install tur-repo -y
 
+echo "[*] Ép buộc cập nhật danh sách gói từ kho TUR..."
+apt update -y
+
 echo "[*] Đang cài đặt Python 3.13..."
-pkg install python3.13 python3.13-dev -y
+pkg install python3.13 -y
 
-echo "[*] Đang tạo liên kết để lệnh 'python' trỏ thẳng vào Python 3.13..."
-ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python
-
-echo "[+] Hoàn tất! Kiểm tra phiên bản hiện tại:"
-python --version
+# Kiểm tra xem việc cài đặt Python 3.13 có thành công không trước khi tạo liên kết
+if [ -f "$PREFIX/bin/python3.13" ]; then
+    echo "[*] Đang cấu hình liên kết hệ thống cho lệnh 'python'..."
+    ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python
+    ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python3
+    
+    echo "[+] HOÀN TẤT THÀNH CÔNG! Kiểm tra phiên bản:"
+    python --version
+else
+    echo "[-] LỖI: Không thể cài đặt Python 3.13. Vui lòng kiểm tra lại kết nối mạng!"
+fi
