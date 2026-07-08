@@ -1,20 +1,19 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-echo "[*] 1. Đang gỡ bỏ phiên bản Python cũ để tránh xung đột..."
+echo "[*] 1. Đang gỡ bỏ phiên bản Python cũ..."
 pkg uninstall python python-dev python3 -y
 
-echo "[*] 2. Tạo và di chuyển vào thư mục tạm thời..."
+echo "[*] 2. Tạo thư mục tạm thời..."
 rm -rf $HOME/tmp_python
 mkdir -p $HOME/tmp_python && cd $HOME/tmp_python
 
-echo "[*] 3. Tải trực tiếp gói Python 3.13 từ máy chủ lưu trữ toàn cầu..."
-# Sử dụng link tải trực tiếp từ máy chủ dịch vụ của Termux (Đảm bảo file gốc 13MB)
+echo "[*] 3. Tải trực tiếp gói Python 3.13 từ máy chủ lưu trữ Termux..."
+# Đổi sang link gốc của Termux để tải đủ file 13MB, tránh file lỗi 563KB trên GitHub
 curl -sL "https://termux.dev" -o python3.13_aarch64.deb
 
 echo "[*] 4. Tiến hành cài đặt file bằng trình quản lý dpkg..."
 if [ -f "python3.13_aarch64.deb" ]; then
     dpkg -i python3.13_aarch64.deb
-    # Tự động nạp cấu hình và sửa lỗi nếu thiếu các thư viện hệ thống đi kèm
     apt install -f -y
 else
     echo "[-] LỖI: Không thể tải được file cài đặt từ máy chủ chính."
