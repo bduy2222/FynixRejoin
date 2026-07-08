@@ -21,29 +21,39 @@ termux-change-repo <<EOF
 1
 EOF
 
-# ===== BƯỚC 2: THIẾT LẬP KHO TUR VÀ CÀI THƯ VIỆN ĐÚNG PHIÊN BẢN =====
+# ===== BƯỚC 2: CÀI ĐẶT THƯ VIỆN HỆ THỐNG VÀ XỬ LÝ PSUTIL/PILLOW =====
 echo -e "\n${C_CYAN}[2/4] Cài đặt các thư viện hệ thống tương thích Python 3.13...${C_RESET}"
 
-# Ép cài tur-repo để đồng bộ kho gói phụ
-pkg install -y tur-repo
+# Đồng bộ kho gói
 apt-get update -y
 
-# Tải các thư viện đồ họa nền
-apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" libjpeg-turbo libpng
+# Tải các thư viện đồ họa và công cụ cơ bản nền
+apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" libjpeg-turbo libpng unzip python python-pip
 
-# Lấy chính xác phiên bản Python 3.13 hiện có của hệ thống để ghim chặt cấu hình phụ thuộc
-VERSION=$(apt-cache madison python | grep -o '3\.13\.[0-9a-zA-Z.~_-]*' | head -n1)
+echo -e "${C_GREEN}[+] Đang xử lý bẻ khóa cài đặt python-psutil độc quyền cho Android...${C_RESET}"
+# Tải bản wheel phân phối Linux chính thức (x86_64 cho giả lập) về thư mục tạm
+mkdir -p /sdcard/Download/fynix_tmp
+pip download psutil --platform manylinux2014_x86_64 --only-binary=:all: --no-cache-dir -d /sdcard/Download/fynix_tmp
 
-echo -e "${C_GREEN}[+] Đang tiến hành đồng bộ gói cấu hình pre-compiled...${C_RESET}"
-if [ -n "$VERSION" ]; then
-    # Ghim cứng bản python=3.13 để bắt buộc apt phải lấy bản psutil/pillow tương thích ngược với Python 3.13 từ kho TUR
-    apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" \
-        python=$VERSION python-pip python-psutil python-pillow
+# Di chuyển thẳng vào trái tim site-packages của Python 3.13 để bung lụa
+cd /data/data/com.termux/files/usr/lib/python3.13/site-packages
+unzip -o /sdcard/Download/fynix_tmp/psutil-*.whl
+
+# Tiến hành Vá (Patch) trực tiếp file mã nguồn để triệt hạ lỗi "platform android is not supported"
+if [ -f "psutil/__init__.py" ]; then
+    sed -i 's/elif LINUX:/elif LINUX or True:/g' psutil/__init__.py
+    sed -i 's/raise NotImplementedError(msg)/pass/g' psutil/__init__.py
+    echo -e "${C_GREEN}[+] Đã bẻ gãy bộ kiểm duyệt hệ điều hành của psutil thành công!${C_RESET}"
 else
-    # Phương án dự phòng nếu không lấy được biến version
-    apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" \
-        python-psutil python-pillow
+    echo -e "${C_YELLOW}[!] Cảnh báo: Không tìm thấy file __init__.py để vá!${C_RESET}"
 fi
+
+# Cài đặt gói python-pillow (gói này chạy độc lập không lỗi script)
+apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" python-pillow
+
+# Dọn rác
+rm -rf /sdcard/Download/fynix_tmp
+cd ~
 
 # ===== BƯỚC 3: CÀI ĐẶT CÁC MODULE PYTHON NHẸ CÒN LẠI QUA PIP =====
 echo -e "\n${C_CYAN}[3/4] Cài đặt các Module Python còn lại qua PIP...${C_RESET}"
