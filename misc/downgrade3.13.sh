@@ -1,36 +1,31 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-echo "[*] 1. Xóa triệt để các kho lưu trữ phụ bị lỗi (Gây lỗi NOSPLIT)..."
-# Lệnh này sẽ dọn sạch file cấu hình chứa liên kết gãy từ workers.dev
-rm -rf $PREFIX/etc/apt/sources.list.d/*
-
-echo "[*] 2. Ép cấu hình kho chính về máy chủ chính thức ổn định..."
-echo "deb https://cloudflare.com stable main" > $PREFIX/etc/apt/sources.list
-
-echo "[*] 3. Xóa bộ nhớ đệm APT cũ để nạp cấu hình mới..."
-apt clean
-
-echo "[*] 4. Đồng bộ danh sách gói hệ thống..."
-apt update -y
-
-echo "[*] 5. Cài đặt lại kho lưu trữ phụ (TUR) bản mới ổn định..."
-apt install tur-repo -y
-
-echo "[*] 6. Đọc danh sách gói từ kho TUR vừa thêm..."
-apt update -y
-
-echo "[*] 7. Tiến hành gỡ cài đặt Python cũ và hạ cấp xuống Python 3.13..."
+echo "[*] 1. Đang gỡ bỏ phiên bản Python cũ để tránh xung đột..."
 pkg uninstall python python-dev python3 -y
-apt install python3.13 -y
 
-# Bước kiểm tra cuối cùng và tạo liên kết chạy lệnh
+echo "[*] 2. Tạo thư mục tạm thời..."
+mkdir -p $HOME/tmp_python && cd $HOME/tmp_python
+
+echo "[*] 3. Tải trực tiếp gói Python 3.13 (.deb) từ GitHub..."
+# Tải file cài đặt chính thức dành cho kiến trúc chip aarch64 (hầu hết điện thoại Android hiện nay)
+curl -L -O https://github.com
+
+echo "[*] 4. Tiến hành cài đặt file .deb bằng trình quản lý dpkg..."
+dpkg -i python3.13_3.13.1_aarch64.deb
+
+# Tự động sửa lỗi nếu thiếu thư viện phụ thuộc đi kèm
+apt install -f -y
+
+echo "[*] 5. Đang cấu hình liên kết hệ thống cho lệnh 'python'..."
 if [ -f "$PREFIX/bin/python3.13" ]; then
-    echo "[*] Cấu hình phím tắt cho lệnh 'python'..."
     ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python
     ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python3
     
-    echo "[+] CHÚC MỪNG! ĐÃ HẠ CẤP THÀNH CÔNG PYTHON 3.13!"
+    echo "[+] HOÀN TẤT THÀNH CÔNG! Phiên bản hiện tại của bạn:"
     python --version
 else
-    echo "[-] Lỗi cài đặt thất bại. Vui lòng bảo member tắt hoàn toàn Termux mở lại rồi chạy lại lệnh."
+    echo "[-] LỖI: Cài đặt file .deb thất bại. Vui lòng kiểm tra lại kết nối mạng!"
 fi
+
+echo "[*] Dọn dẹp tệp tin rác..."
+rm -rf $HOME/tmp_python
