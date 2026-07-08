@@ -26,44 +26,46 @@ EOF
 # ===== BƯỚC 2: QUẢN LÝ HẠ CẤP VÀ GHIM CỨNG PYTHON 3.13 =====
 echo -e "\n${C_CYAN}[2/4] Đang kiểm tra và cấu hình Python 3.13...${C_RESET}"
 
-# Kiểm tra nếu phiên bản hiện tại không phải là 3.13 thì tiến hành hạ cấp
+# Hủy đóng băng cũ nếu có để tránh lỗi apt hung packages
+apt-mark unhold python >/dev/null 2>&1
+
 CURRENT_PY_VER=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
 
 if [ "$CURRENT_PY_VER" != "3.13" ]; then
-    echo -e "${C_YELLOW}[!] Phát hiện Python phiên bản $CURRENT_PY_VER. Tiến hành hạ cấp về 3.13...${C_RESET}"
+    echo -e "${C_YELLOW}[!] Hệ thống chưa có hoặc lệch phiên bản Python. Tiến hành ép cài bản 3.13...${C_RESET}"
     
-    # Xóa triệt để bản cũ tránh xung đột file cấu trúc
+    # Xóa triệt để tàn dư lỗi
     apt-get purge -y python python-pip
     apt-get autoremove -y
     
-    # Tải gói deb Python 3.13.1 bản chuẩn x86_64 dành cho môi trường giả lập
-    echo -e "${C_GREEN}[+] Đang kéo gói Python 3.13 từ kho lưu trữ...${C_RESET}"
-    curl -L -o $HOME/python3.13.deb "https://github.com/termux/termux-packages/raw/6c7cb0bd6e481005ca7ffcd89f8f4a1fa6ce8bb3/packages/python/python_3.13.1_x86_64.deb"
+    # Tải gói deb Python 3.13.1 bản Raw Binary thật (Nặng ~13MB) cho x86_64
+    echo -e "${C_GREEN}[+] Đang kéo gói chuẩn Python 3.13.1 (Raw Package)...${C_RESET}"
+    curl -L -o $HOME/python3.13.deb "https://archive.org/download/termux-x86-64-packages/python_3.13.1_x86_64.deb"
     
-    # Ép hệ thống bung cài đặt bản deb vừa tải
+    # Ép cài đặt tệp tin vừa tải
     dpkg -i $HOME/python3.13.deb
     rm -f $HOME/python3.13.deb
     
-    # Khôi phục pip cho Python 3.13 thủ công
+    # Khởi tạo lại PIP trực tiếp từ tổng đài pypa cho bản 3.13
     echo -e "${C_GREEN}[+] Khởi tạo trình quản lý gói PIP cho Python 3.13...${C_RESET}"
     curl -sL https://bootstrap.pypa.io/get-pip.py | python
     
-    # KHÓA (HOLD) KHÔNG CHO APT TỰ ĐỘNG NÂNG CẤP LÊN 3.14 SAU NÀY
+    # ĐÓNG BĂNG TRÁNH LÊN 3.14 LẦN NỮA
     apt-mark hold python
 else
-    echo -e "${C_GREEN}[+] Hệ thống đã ở sẵn Python 3.13. Tiến hành ghim phiên bản chống cập nhật lỗi...${C_RESET}"
+    echo -e "${C_GREEN}[+] Hệ thống đang ở sẵn Python 3.13. Đang tiến hành đóng băng ghim phiên bản...${C_RESET}"
     apt-mark hold python
 fi
 
-# Đồng bộ lại danh sách gói và cài các công cụ bổ trợ nền
+# Đồng bộ danh sách gói và xử lý các thư viện nền
 apt-get update -y
 apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" libjpeg-turbo libpng unzip python-pillow
 
-# Lấy chính xác đường dẫn site-packages của Python 3.13 vừa cài
+# Lấy chính xác đường dẫn site-packages của Python 3.13 vừa được dựng
 PYTHON_SITE_DIR=$(python -c "import site; print(site.getsitepackages()[0])")
 
-echo -e "${C_GREEN}[+] Đang giải quyết bẻ khóa cài đặt python-psutil trên Python 3.13...${C_RESET}"
-# Tạo thư mục tạm an toàn ngay trong $HOME để tải gói bánh xe (wheel)
+echo -e "${C_GREEN}[+] Đang xử lý cài đè và vá lỗi python-psutil...${C_RESET}"
+# Tạo thư mục tạm an toàn ngay trong $HOME
 mkdir -p $HOME/fynix_tmp
 pip download psutil --platform manylinux2014_x86_64 --only-binary=:all: --no-cache-dir -d $HOME/fynix_tmp
 
@@ -90,7 +92,7 @@ pip install requests aiohttp colorama nest_asyncio discord.py --no-cache-dir -i 
 
 # ===== BƯỚC 4: KIỂM TRA TRẠNG THÁI CUỐI CÙNG =====
 echo -e "\n${C_CYAN}[4/4] Kiểm tra trạng thái hệ thống cuối cùng...${C_RESET}"
-PY_FINAL_VER=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')")
+PY_FINAL_VER=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')" 2>/dev/null)
 echo -e "${C_GREEN}[+] Phiên bản Python hiện tại: $PY_FINAL_VER${C_RESET}"
 
 python -c "import psutil; print('-> Kiểm tra mô-đun psutil: OK')" 2>/dev/null || echo -e "${C_YELLOW}[!] Lưu ý: Cần kiểm tra lại quyền chạy script${C_RESET}"
