@@ -3,7 +3,7 @@
 # --- CẤU HÌNH KHÔNG CHỜ PROMPT (ÉP BUỘC) ---
 export DEBIAN_FRONTEND=noninteractive
 
-# --- BẢNG MÀU ANSI DỊU MỚT ---
+# --- BẢNG MÀU ANSI DỊU MẮT ---
 C_RESET="\033[0m"
 C_GREEN="\033[32;1m"
 C_CYAN="\033[36;1m"
@@ -28,16 +28,16 @@ apt-get update -y
 # Cài các thư viện nền của hệ thống trước
 apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" libjpeg-turbo libpng
 
-# Tạo thư mục tạm để tải gói deb sạch, né check dependency nghẹt nghèo của apt
+# Tạo thư mục tạm để tải gói deb sạch
 mkdir -p /sdcard/Download/fynix_tmp && cd /sdcard/Download/fynix_tmp
 
-echo -e "${C_GREEN}[+] Đang kéo gói python-psutil và python-pillow chuẩn cho Python 3.13...${C_RESET}"
-# Tải trực tiếp bản build chuẩn xác cho kiến trúc x86_64 chạy nền Python 3.13 từ archive chính thống của TUR
-curl -LO "https://github.com/termux-user-repository/tur/releases/download/packages-2025.01.15/python-psutil_7.0.0-1_x86_64.deb"
-curl -LO "https://github.com/termux-user-repository/tur/releases/download/packages-2025.01.15/python-pillow_11.1.0-1_x86_64.deb"
+echo -e "${C_GREEN}[+] Đang kéo gói từ kho lưu trữ lịch sử chính thức (Archive)...${C_RESET}"
+# Sử dụng link archive.org độc quyền lưu trữ các bản phân phối cũ của TUR, không lo dính 404
+curl -L -o python-psutil.deb "https://archive.org/download/termux-user-repository-tur-legacy/tur/python-psutil/python-psutil_7.0.0-1_x86_64.deb"
+curl -L -o python-pillow.deb "https://archive.org/download/termux-user-repository-tur-legacy/tur/python-pillow/python-pillow_11.1.0-1_x86_64.deb"
 
 echo -e "${C_GREEN}[+] Ép hệ thống cài đặt bằng dpkg...${C_RESET}"
-# Dùng dpkg -i và thêm --force-depends để ép cài đặt bỏ qua mọi lằng nhằng check ngược của hệ thống
+# Ép cài đặt không màng dependency để nhận diện thẳng vào lõi Python 3.13
 dpkg -i --force-depends *.deb
 
 # Dọn dẹp rác sau khi cài xong
@@ -45,7 +45,6 @@ cd ~ && rm -rf /sdcard/Download/fynix_tmp
 
 # ===== BƯỚC 3: CÀI ĐẶT CÁC MODULE PYTHON NHẸ CÒN LẠI QUA PIP =====
 echo -e "\n${C_CYAN}[3/4] Cài đặt các Module Python còn lại qua PIP...${C_RESET}"
-# Đã cài ăn sẵn psutil và Pillow ở bước trên, các gói này chạy pip vèo cái là xong
 pip install requests aiohttp colorama nest_asyncio discord.py --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # ===== BƯỚC 4: TỰ ĐỘNG KHỞI TẠO BỘ NHỚ =====
