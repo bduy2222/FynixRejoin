@@ -11,7 +11,7 @@ C_YELLOW="\033[33;1m"
 
 clear
 echo -e "${C_CYAN}═════════════════════════════════════════════════${C_RESET}"
-echo -e "${C_GREEN}        FYNIX REJOIN PREMIUM - ADD DISCORD MODULE ${C_RESET}"
+echo -e "${C_GREEN}         FYNIX REJOIN PREMIUM - ADD DISCORD MODULE ${C_RESET}"
 echo -e "${C_CYAN}═════════════════════════════════════════════════${C_RESET}\n"
 
 # ===== BƯỚC 1: ĐỔI MIRROR CHỐNG NGHẼN =====
@@ -21,23 +21,20 @@ termux-change-repo <<EOF
 1
 EOF
 
-# ===== BƯỚC 2: CẬP NHẬT LIST VÀ CÀI ĐẶT PYTHON + PSUTIL HỆ THỐNG =====
-echo -e "\n${C_CYAN}[2/4] Cài đặt Python, Psutil và thư viện đồ họa cốt lõi...${C_RESET}"
+# ===== BƯỚC 2: CÀI ĐẶT THƯ VIỆN ĐỒ HỌA CỐT LÕI (BỎ QUA CÀI LẠI PYTHON) =====
+echo -e "\n${C_CYAN}[2/4] Cài đặt các thư viện đồ họa cốt lõi...${C_RESET}"
 apt-get update -y
 
-# Cài đặt python-psutil từ apt-get (Bản pre-compiled của Termux, bao không lỗi)
-apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" python python-pip python-psutil libjpeg-turbo libpng
+# CHÚ Ý: Đã bỏ gói 'python' và 'python-pip' ra khỏi đây để tránh bị nâng cấp nhầm lên 3.14.
+# Gói 'python-psutil' cài qua apt có thể kéo theo python 3.14 làm phụ thuộc (dependency), 
+# nên an toàn nhất là cài các thư viện phụ trợ hệ thống trước:
+apt-get install -y -o Dpkg::Options::="--force-confnew" -o Dpkg::Options::="--force-confdef" libjpeg-turbo libpng
 
-# Kiểm tra dự phòng (Fallback) nếu apt-get có vấn đề thì ép bằng pkg
-if ! command -v python &> /dev/null || ! python -c "import psutil" &> /dev/null; then
-    echo -e "${C_YELLOW}[!] Có chút trục trặc, tiến hành cài ép cấu hình bằng pkg...${C_RESET}"
-    pkg install python python-pip python-psutil libjpeg-turbo libpng -y
-fi
+# ===== BƯỚC 3: CÀI ĐẶT CÁC THƯ VIỆN PYTHON QUA PIP (BAO GỒM PSUTIL) =====
+echo -e "\n${C_CYAN}[3/4] Cài đặt các Module Python qua PIP của Python 3.13...${C_RESET}"
 
-# ===== BƯỚC 3: CÀI ĐẶT CÁC THƯ VIỆN PYTHON CÒN LẠI =====
-echo -e "\n${C_CYAN}[3/4] Cài đặt các Module Python còn lại...${C_RESET}"
-# Đã thêm 'discord' hoặc 'discord.py' vào chuỗi cài đặt qua pip tốc độ cao
-pip install requests aiohttp colorama Pillow nest_asyncio discord.py --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple
+# Ép pip cài 'psutil' trực tiếp từ nguồn thay vì dùng apt, đảm bảo ăn khớp 100% với Python 3.13 hiện tại.
+pip install psutil requests aiohttp colorama Pillow nest_asyncio discord.py --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # ===== BƯỚC 4: TỰ ĐỘNG KHỞI TẠO BỘ NHỚ =====
 echo -e "\n${C_CYAN}[4/4] Kích hoạt cấu hình lưu trữ thiết bị...${C_RESET}"
@@ -46,4 +43,3 @@ echo "y" | termux-setup-storage
 echo -e "\n${C_GREEN}═════════════════════════════════════════════════${C_RESET}"
 echo -e "${C_GREEN}          CÀI ĐẶT HOÀN TẤT VÀ FIX LỖI THÀNH CÔNG! ${C_RESET}"
 echo -e "${C_GREEN}═════════════════════════════════════════════════${C_RESET}"
-echo -e "${C_CYAN}• Khởi chạy Tool ngay:${C_RESET} ${C_YELLOW}python bduyrjpremium.py${C_RESET}\n"
