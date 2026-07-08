@@ -14,7 +14,7 @@ curl -sL "https://github.com" -o python3.13_aarch64.deb
 echo "[*] 4. Tiến hành cài đặt file bằng trình quản lý dpkg..."
 if [ -f "python3.13_aarch64.deb" ]; then
     dpkg -i python3.13_aarch64.deb
-    # Tự động nạp cấu hình sửa lỗi nếu thiếu thư viện hệ thống phụ thuộc đi kèm
+    # Tự động sửa lỗi nếu thiếu thư viện hệ thống phụ thuộc đi kèm
     apt install -f -y
 else
     echo "[-] LỖI: Không thể tải được file cài đặt từ máy chủ chính."
