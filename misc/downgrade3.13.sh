@@ -1,35 +1,37 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-echo "[*] Đang tự động chuyển máy chủ Termux sang Cloudflare để fix lỗi tải..."
-# Ép Termux dùng mirror Cloudflare nhằm đảm bảo không bị lỗi "Unable to locate"
+echo "[*] 1. Xóa bỏ cấu hình kho lưu trữ cũ bị lỗi..."
+rm -f $PREFIX/etc/apt/sources.list.d/*
+
+echo "[*] 2. Ép buộc đặt lại danh sách máy chủ chính thức (Cloudflare)..."
 echo "deb https://cloudflare.com stable main" > $PREFIX/etc/apt/sources.list
 
-echo "[*] Đang gỡ bỏ phiên bản Python cũ..."
-pkg uninstall python python-dev python3 -y
+echo "[*] 3. Sửa lỗi chữ ký bảo mật và cập nhật khóa (Fix Keyring)..."
+# Tải và cài đặt trực tiếp file keyring chính thức để sửa lỗi "not signed"
+pkg install termux-keyring -y --force-yes
 
-echo "[*] Đang cập nhật lại hệ thống..."
-apt update -y && apt upgrade -y
-
-echo "[*] Đang thiết lập kho lưu trữ phụ (TUR)..."
-pkg install tur-repo -y
-
-echo "[*] Cài đặt công cụ quản lý đa phiên bản Python..."
-# Cài đặt tur-multipy giúp tải trực tiếp mọi phiên bản python độc lập
-pkg install tur-multipy -y
+echo "[*] 4. Đang làm sạch bộ nhớ đệm APT..."
+apt clean
 apt update -y
 
-echo "[*] Đang cài đặt chính xác Python 3.13..."
+echo "[*] 5. Đang cài đặt kho lưu trữ phụ (TUR) mới..."
+pkg install tur-repo -y
+
+echo "[*] 6. Đang cập nhật danh sách gói tổng hợp..."
+apt update -y
+
+echo "[*] 7. Tiến hành cài đặt Python 3.13..."
+pkg uninstall python python-dev python3 -y
 apt install python3.13 -y
 
-# Kiểm tra và thiết lập đường dẫn chạy lệnh
+# Kiểm tra cuối cùng và tạo liên kết chạy lệnh
 if [ -f "$PREFIX/bin/python3.13" ]; then
-    echo "[*] Đang tạo liên kết hệ thống..."
+    echo "[*] Thiết lập phím tắt lệnh 'python'..."
     ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python
     ln -sf $PREFIX/bin/python3.13 $PREFIX/bin/python3
     
-    echo "[+] HẠ CẤP THÀNH CÔNG! Phiên bản hiện tại của bạn:"
+    echo "[+] HOÀN TẤT THÀNH CÔNG! Phiên bản hiện tại:"
     python --version
 else
-    echo "[-] Nếu vẫn lỗi, hãy chạy lệnh sau ngoài màn hình chính: termux-change-repo"
-    echo "[-] Sau đó tích chọn toàn bộ các kho và chọn Mirror của Cloudflare hoặc Grimler nhé!"
+    echo "[-] Lỗi cài đặt. Vui lòng bảo member gõ lệnh: 'termux-change-repo' ngoài màn hình, chọn 'Mirror by Cloudflare' rồi chạy lại script."
 fi
