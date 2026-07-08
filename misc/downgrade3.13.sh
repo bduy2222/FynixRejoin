@@ -1,60 +1,36 @@
 #!/bin/bash
 
-# Đảm bảo script chạy với quyền root
-if [ "$EUID" -ne 0 ]; then
-  echo "[-] Vui lòng chạy script này với quyền root (sudo)."
-  exit 1
-fi
+echo "[+] Đang kiểm tra môi trường hệ thống..."
 
-echo "[+] Đang kiểm tra phiên bản Python hiện tại..."
-
-# Lấy phiên bản python3 hiện tại
-if command -v python3 &>/dev/null; then
-    CURRENT_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-    echo "[+] Phiên bản Python3 hiện tại là: $CURRENT_VERSION"
-else
-    CURRENT_VERSION="0.0"
-    echo "[!] Không tìm thấy Python3 trên hệ thống."
-fi
-
-# Hàm cài đặt Python 3.13
-install_python_313() {
-    echo "[+] Cập nhật hệ thống và thêm PPA deadsnakes..."
-    apt-get update -y
-    apt-get install -y software-properties-common
-    add-apt-repository -y ppa:deadsnakes/ppa
-    apt-get update -y
-
-    echo "[+] Cài đặt Python 3.13 và pip..."
-    apt-get install -y python3.13 python3.13-venv python3.13-distutils
-
-    # Cấu hình update-alternatives để python3 nhận bản 3.13
-    echo "[+] Cấu hình ưu tiên cho Python 3.13..."
-    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 1
+# Kiểm tra xem có phải đang chạy trên Termux không
+if [ -d "/data/data/com.termux" ]; then
+    echo "[+] Phát hiện môi trường Termux trên Android."
     
-    # Thiết lập mặc định (nếu có nhiều bản cũ)
-    update-alternatives --set python3 /usr/bin/python3.13
+    echo "[+] Đang cập nhật gói hệ thống và cài đặt tur-repo..."
+    pkg update -y
+    pkg install -y x11-repo # Cần thiết cho một số thư viện bổ sung
+    pkg install -y tur-repo
 
-    echo "[+] Đang cài đặt/cập nhật pip cho Python 3.13..."
+    echo "[+] Đang cài đặt chính xác Python 3.13 từ TUR..."
+    pkg install -y python3.13
+
+    # Tạo liên kết (alias) để khi gõ 'python3' hoặc 'python' sẽ gọi python3.13
+    echo "[+] Cấu hình liên kết cho lệnh python3..."
+    rm -f $PREFIX/bin/python3
+    rm -f $PREFIX/bin/python
+    ln -s $PREFIX/bin/python3.13 $PREFIX/bin/python3
+    ln -s $PREFIX/bin/python3.13 $PREFIX/bin/python
+
+    # Cài đặt pip riêng cho bản 3.13 nếu chưa có
+    echo "[+] Đang cài đặt pip cho Python 3.13..."
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.13
 
-    echo "[+] HOÀN THÀNH! Kiểm tra lại phiên bản:"
+    echo "[+] HOÀN THÀNH! Kiểm tra phiên bản:"
     python3 --version
-    pip3 --version
-}
+    pip --version
 
-# So sánh phiên bản (Kiểm tra xem có lớn hơn 3.13 không)
-# Sử dụng sort -V để so sánh chuỗi phiên bản chính xác
-if [ "$(printf '%s\n%s' "3.13" "$CURRENT_VERSION" | sort -V | head -n1)" = "3.13" ] && [ "$CURRENT_VERSION" != "3.13" ]; then
-    echo "[!] Phát hiện phiên bản ($CURRENT_VERSION) cao hơn 3.13. Tiến hành hạ cấp..."
-    
-    # Tùy chọn: Xóa liên kết update-alternatives cũ nếu có để tránh xung đột
-    update-alternatives --remove-all python3 &>/dev/null
-    
-    install_python_313
-elif [ "$CURRENT_VERSION" = "3.13" ]; then
-    echo "[+] Hệ thống đã ở phiên bản Python 3.13. Không cần thay đổi."
 else
-    echo "[+] Phiên bản hiện tại thấp hơn 3.13 hoặc chưa cài đặt. Tiến hành cài đặt Python 3.13..."
-    install_python_313
+    echo "[-] Script này hiện tại đã được tối ưu hóa cho Termux (Android)."
+    echo "[-] Nếu bạn dùng Ubuntu, vui lòng dùng phiên bản script cũ."
+    exit 1
 fi
